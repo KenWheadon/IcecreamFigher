@@ -355,6 +355,12 @@ const AUDIO_CONFIG = {
     dealDamage: "audio/deal_damage.mp3",
     heal: "audio/heal.mp3",
 
+    // Move sounds (mapping the move types to actual sound files)
+    light: "audio/attack_light.mp3",
+    heavy: "audio/attack_heavy.mp3",
+    defend: "audio/defend.mp3",
+    boost: "audio/boost.mp3",
+
     // Talk System
     talkStart: "audio/talk_start.mp3",
     talkSuccess: "audio/talk_success.mp3",
@@ -369,6 +375,11 @@ const AUDIO_CONFIG = {
     coneClick: "audio/cone_click.mp3",
     comboIncrease: "audio/combo_increase.mp3",
     trainingComplete: "audio/training_complete.mp3",
+
+    // Slot machine sounds
+    spin: "audio/slot_spin.mp3",
+    win: "audio/slot_win.mp3",
+    jackpot: "audio/slot_jackpot.mp3",
 
     // Upgrades
     upgradeApply: "audio/upgrade_apply.mp3",
