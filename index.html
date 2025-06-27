@@ -171,7 +171,9 @@
       <!-- Training Screen -->
       <div class="screen" id="training-screen">
         <h2>Training Time!</h2>
-        <p>Click the ice cream cones for points! Higher = more points!</p>
+        <p id="training-instructions">
+          Click the ice cream cones for points! Higher = more points!
+        </p>
         <div class="training-combo">
           Combo: <span id="combo-counter">0</span>x
         </div>
@@ -225,41 +227,81 @@
           </div>
         </div>
 
-        <div class="slot-machine">
-          <h3>🎰 Risky Slots 🎰</h3>
-          <p>
-            Risk points for rewards! (Cost:
-            <span id="slot-cost">1</span> Points)
-          </p>
-          <div class="slot-reels">
-            <div class="slot-reel" id="reel1">
-              <img
-                src="images/slot_vanilla.png"
-                alt="Vanilla"
-                class="slot-symbol"
-              />
+        <div class="slot-machine-container">
+          <div class="slot-machine" id="slot-machine">
+            <h3>🎰 Risky Slots 🎰</h3>
+            <p>
+              Risk points for rewards! (Cost:
+              <span id="slot-cost">1</span> Points)
+            </p>
+            <div class="slot-reels">
+              <div class="slot-reel" id="reel1">
+                <img
+                  src="images/slot_vanilla.png"
+                  alt="Vanilla"
+                  class="slot-symbol"
+                />
+              </div>
+              <div class="slot-reel" id="reel2">
+                <img
+                  src="images/slot_vanilla.png"
+                  alt="Vanilla"
+                  class="slot-symbol"
+                />
+              </div>
+              <div class="slot-reel" id="reel3">
+                <img
+                  src="images/slot_vanilla.png"
+                  alt="Vanilla"
+                  class="slot-symbol"
+                />
+              </div>
             </div>
-            <div class="slot-reel" id="reel2">
+            <button class="move-btn" id="spin-btn">
               <img
-                src="images/slot_vanilla.png"
-                alt="Vanilla"
-                class="slot-symbol"
+                src="images/slot_spin_icon.png"
+                alt="Spin"
+                class="move-icon"
               />
-            </div>
-            <div class="slot-reel" id="reel3">
-              <img
-                src="images/slot_vanilla.png"
-                alt="Vanilla"
-                class="slot-symbol"
-              />
+              Spin! (-<span id="spin-cost">1</span> Points)
+            </button>
+            <div id="slot-result" role="status" aria-live="polite"></div>
+            <p class="slot-warning">Cost increases by 1 point each spin!</p>
+            <p class="slot-note">
+              <strong>Need 3 matching symbols to win!</strong>
+            </p>
+          </div>
+
+          <div class="slot-paytable">
+            <h4>🏆 Paytable</h4>
+            <p class="paytable-note">3 matching symbols required:</p>
+            <div class="paytable-grid">
+              <div class="paytable-row">
+                <span class="symbol">🍦🍦🍦</span>
+                <span class="reward">+2 Attack</span>
+              </div>
+              <div class="paytable-row">
+                <span class="symbol">🍫🍫🍫</span>
+                <span class="reward">+2 Defense</span>
+              </div>
+              <div class="paytable-row">
+                <span class="symbol">🍓🍓🍓</span>
+                <span class="reward">+15 HP</span>
+              </div>
+              <div class="paytable-row">
+                <span class="symbol">🍨🍨🍨</span>
+                <span class="reward">+2 Max Sanity</span>
+              </div>
+              <div class="paytable-row">
+                <span class="symbol">🧊🧊🧊</span>
+                <span class="reward">+1 All Stats & +10 HP</span>
+              </div>
+              <div class="paytable-row jackpot">
+                <span class="symbol">🪙🪙🪙</span>
+                <span class="reward">+15 Training Points</span>
+              </div>
             </div>
           </div>
-          <button class="move-btn" id="spin-btn">
-            <img src="images/slot_spin_icon.png" alt="Spin" class="move-icon" />
-            Spin! (-<span id="spin-cost">1</span> Points)
-          </button>
-          <div id="slot-result" role="status" aria-live="polite"></div>
-          <p class="slot-warning">Cost increases by 1 point each spin!</p>
         </div>
 
         <button class="continue-btn" id="continue-training">
@@ -362,6 +404,11 @@
     </div>
 
     <script src="config.js"></script>
+    <script src="fighter-selection.js"></script>
+    <script src="combat.js"></script>
+    <script src="training.js"></script>
+    <script src="victory-screen.js"></script>
+    <script src="game-over-screen.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

@@ -424,13 +424,11 @@ h3 {
   transition: transform var(--transition-fast);
   user-select: none;
   will-change: transform, bottom;
-  /* Ensure the cone is clickable in its entire area */
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 60px;
   min-height: 60px;
-  /* Add visual feedback */
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid transparent;
@@ -446,7 +444,6 @@ h3 {
   width: 50px;
   height: 50px;
   object-fit: contain;
-  /* Prevent the image from interfering with clicks */
   pointer-events: none;
 }
 
@@ -500,12 +497,21 @@ h3 {
   display: block;
 }
 
-/* Slot Machine */
+/* Enhanced Slot Machine */
+.slot-machine-container {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
 .slot-machine {
   background: var(--card-background);
   border-radius: var(--border-radius);
   padding: 20px;
-  margin: 20px auto;
+  flex: 1;
+  min-width: 300px;
   max-width: 400px;
   text-align: center;
 }
@@ -540,10 +546,85 @@ h3 {
   margin-top: 10px;
 }
 
+.slot-note {
+  font-size: var(--font-size-small);
+  color: #48dbfb;
+  margin-top: 5px;
+}
+
 #slot-result {
   margin: 15px 0;
   font-weight: bold;
   min-height: 20px;
+}
+
+/* Slot Machine Paytable */
+.slot-paytable {
+  background: var(--card-background);
+  border-radius: var(--border-radius);
+  padding: 15px;
+  flex: 1;
+  min-width: 280px;
+  max-width: 350px;
+}
+
+.slot-paytable h4 {
+  margin: 0 0 10px 0;
+  text-align: center;
+  color: #fdcb6e;
+  text-shadow: var(--text-shadow);
+}
+
+.paytable-note {
+  font-size: var(--font-size-small);
+  text-align: center;
+  margin-bottom: 15px;
+  color: #ddd;
+  font-style: italic;
+}
+
+.paytable-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.paytable-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-small);
+  transition: background-color var(--transition-normal);
+}
+
+.paytable-row:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.paytable-row.jackpot {
+  background: linear-gradient(
+    90deg,
+    rgba(253, 203, 110, 0.2),
+    rgba(253, 203, 110, 0.1)
+  );
+  border: 1px solid rgba(253, 203, 110, 0.3);
+}
+
+.paytable-row .symbol {
+  font-size: var(--font-size-medium);
+  font-weight: bold;
+}
+
+.paytable-row .reward {
+  font-size: var(--font-size-small);
+  color: #48dbfb;
+  font-weight: bold;
+}
+
+.paytable-row.jackpot .reward {
+  color: #fdcb6e;
 }
 
 /* Dialogue */
@@ -691,6 +772,15 @@ h3 {
   .fighter-sprite {
     font-size: 50px;
   }
+
+  .slot-machine-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .slot-paytable {
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -722,6 +812,18 @@ h3 {
     color: rgba(255, 255, 255, 0.8);
     padding: 5px 0;
     margin-top: 5px;
+  }
+
+  .paytable-row {
+    padding: 6px 8px;
+  }
+
+  .paytable-row .symbol {
+    font-size: var(--font-size-small);
+  }
+
+  .paytable-row .reward {
+    font-size: 11px;
   }
 }
 

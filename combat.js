@@ -1,0 +1,660 @@
+// Combat System Module
+class Combat {
+  constructor(game) {
+    this.game = game;
+  }
+
+  /**
+   * Set up combat event listeners
+   */
+  setupEventListeners() {
+    // Move buttons
+    document.querySelectorAll(".move-btn[data-move]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const moveType = e.currentTarget.dataset.move;
+        this.game.playSound("buttonClick");
+        this.playerMove(moveType);
+      });
+
+      btn.addEventListener("mouseenter", (e) => {
+        const moveType = e.currentTarget.dataset.move;
+        this.game.playSound("buttonHover");
+        this.updateTooltip(moveType);
+      });
+    });
+
+    // Talk button
+    const talkBtn = document.getElementById("talk-btn");
+    if (talkBtn) {
+      talkBtn.addEventListener("click", () => {
+        this.game.playSound("buttonClick");
+        this.startTalk();
+      });
+    }
+  }
+
+  /**
+   * Start a battle
+   */
+  startBattle() {
+    try {
+      const enemyTemplate = CONFIG_UTILS.getEnemyTemplate(
+        this.game.gameState.currentBattle
+      );
+      if (!enemyTemplate) {
+        this.game.gameOverScreen.gameOver("No more enemies to fight!");
+        return;
+      }
+
+      this.game.gameState.enemy = { ...enemyTemplate };
+      this.game.gameState.turnCount = 0;
+      this.game.gameState.isPlayerTurn = true;
+      this.game.gameState.playerBoost = false;
+      this.game.gameState.enemyBoost = false;
+      this.game.gameState.playerDefending = false;
+      this.game.gameState.enemyDefending = false;
+
+      // Restore some sanity between battles
+      this.game.gameState.player.sanity = Math.min(
+        this.game.gameState.player.sanity +
+          GAME_CONFIG.SANITY_RECOVERY_BETWEEN_BATTLES,
+        this.game.gameState.player.maxSanity
+      );
+
+      this.updateBattleUI();
+      this.game.addBattleLog(
+        `Battle ${this.game.gameState.currentBattle} begins!`
+      );
+      this.game.addBattleLog(`${this.game.gameState.enemy.name} appears!`);
+      this.game.playSound("battleStart");
+    } catch (error) {
+      console.error("Failed to start battle:", error);
+      this.game.gameOverScreen.gameOver(
+        "An error occurred starting the battle!"
+      );
+    }
+  }
+
+  /**
+   * Update the battle UI
+   */
+  updateBattleUI() {
+    try {
+      const battleNumber = document.getElementById("battle-number");
+      if (battleNumber) {
+        battleNumber.textContent = this.game.gameState.currentBattle;
+      }
+
+      this.updateFighterUI("player", this.game.gameState.player);
+      this.updateFighterUI("enemy", this.game.gameState.enemy);
+
+      const buttons = document.querySelectorAll(".move-btn");
+      buttons.forEach((btn) => {
+        btn.disabled =
+          !this.game.gameState.isPlayerTurn ||
+          this.game.gameState.isMalfunctioning;
+      });
+
+      const talkBtn = document.getElementById("talk-btn");
+      if (talkBtn) {
+        talkBtn.disabled =
+          !this.game.gameState.isPlayerTurn ||
+          this.game.gameState.player.sanity >=
+            this.game.gameState.player.maxSanity - 1;
+      }
+
+      const dialoguePortrait = document.getElementById("dialogue-portrait");
+      if (dialoguePortrait && this.game.gameState.player) {
+        CONFIG_UTILS.updateImage(
+          dialoguePortrait,
+          this.game.gameState.player.image,
+          `${this.game.gameState.player.name} Portrait`
+        );
+      }
+    } catch (error) {
+      console.error("Failed to update battle UI:", error);
+    }
+  }
+
+  /**
+   * Update UI for a specific fighter
+   */
+  updateFighterUI(type, fighter) {
+    const elements = {
+      name: document.getElementById(`${type}-name`),
+      image: document.getElementById(`${type}-image`),
+      hp: document.getElementById(`${type}-hp`),
+      maxHp: document.getElementById(`${type}-max-hp`),
+      sanity: document.getElementById(`${type}-sanity`),
+      maxSanity: document.getElementById(`${type}-max-sanity`),
+      hpBar: document.getElementById(`${type}-hp-bar`),
+      sanityBar: document.getElementById(`${type}-sanity-bar`),
+    };
+
+    if (elements.name) elements.name.textContent = fighter.name;
+    if (elements.image && fighter.image) {
+      CONFIG_UTILS.updateImage(elements.image, fighter.image, fighter.name);
+    }
+    if (elements.hp) elements.hp.textContent = Math.max(0, fighter.hp);
+    if (elements.maxHp) elements.maxHp.textContent = fighter.maxHp;
+    if (elements.sanity) elements.sanity.textContent = fighter.sanity;
+    if (elements.maxSanity) elements.maxSanity.textContent = fighter.maxSanity;
+
+    if (elements.hpBar) {
+      const hpPercent = (fighter.hp / fighter.maxHp) * 100;
+      elements.hpBar.style.width = `${Math.max(0, hpPercent)}%`;
+    }
+
+    if (elements.sanityBar) {
+      const sanityPercent = (fighter.sanity / fighter.maxSanity) * 100;
+      elements.sanityBar.style.width = `${Math.max(0, sanityPercent)}%`;
+    }
+  }
+
+  /**
+   * Handle player move
+   */
+  playerMove(moveType) {
+    if (
+      !this.game.gameState.isPlayerTurn ||
+      this.game.gameState.isMalfunctioning
+    ) {
+      return;
+    }
+
+    if (!CONFIG_UTILS.isValidMoveType(moveType)) {
+      console.error(`Invalid move type: ${moveType}`);
+      return;
+    }
+
+    try {
+      const move = MOVE_DEFINITIONS[moveType];
+      this.game.gameState.isPlayerTurn = false;
+
+      const sanityCost = move.baseCost;
+      this.game.gameState.player.sanity = Math.max(
+        0,
+        this.game.gameState.player.sanity - sanityCost
+      );
+      this.game.addBattleLog(
+        `${this.game.gameState.player.name} uses ${move.name}, costing ${sanityCost} sanity!`
+      );
+
+      if (this.game.gameState.player.sanity <= 0) {
+        this.game.gameState.player.sanity = 0;
+        this.updateBattleUI();
+        setTimeout(() => this.triggerMalfunction(), 500);
+        return;
+      }
+
+      this.executePlayerMove(moveType);
+    } catch (error) {
+      console.error("Failed to execute player move:", error);
+      this.game.gameState.isPlayerTurn = true;
+    }
+  }
+
+  /**
+   * Execute player move effects
+   */
+  executePlayerMove(moveType) {
+    const move = MOVE_DEFINITIONS[moveType];
+    const playerSprite = document.getElementById("player-sprite");
+    const enemySprite = document.getElementById("enemy-sprite");
+
+    if (move.sound) {
+      this.game.playSound(moveType);
+    }
+
+    switch (moveType) {
+      case "defend":
+        this.game.addAnimationClass(playerSprite, "defend-animation");
+        this.game.addBattleLog(
+          `${this.game.gameState.player.name} raises an Ice Shield!`
+        );
+        this.game.gameState.playerDefending = true;
+        break;
+
+      case "boost":
+        this.game.gameState.playerBoost = true;
+        this.game.addAnimationClass(playerSprite, "boost-animation");
+        this.game.addBattleLog(
+          `${this.game.gameState.player.name} activates Sugar Rush!`
+        );
+        break;
+
+      case "light":
+      case "heavy":
+        this.game.addAnimationClass(playerSprite, "attack-animation");
+        let damage = move.damage + this.game.gameState.player.attack;
+
+        if (this.game.gameState.playerBoost) {
+          damage = Math.floor(damage * GAME_CONFIG.BOOST_MULTIPLIER);
+          this.game.gameState.playerBoost = false;
+          this.game.addBattleLog(
+            `${this.game.gameState.player.name} uses boosted ${move.name}!`
+          );
+        } else {
+          this.game.addBattleLog(
+            `${this.game.gameState.player.name} uses ${move.name}!`
+          );
+        }
+
+        if (!this.game.gameState.enemyDefending) {
+          const finalDamage = CONFIG_UTILS.calculateDamage(
+            damage,
+            this.game.gameState.enemy.defense
+          );
+          this.game.gameState.enemy.hp = Math.max(
+            0,
+            this.game.gameState.enemy.hp - finalDamage
+          );
+          this.game.addAnimationClass(enemySprite, "hit-animation");
+          this.game.showDamageNumber(enemySprite, finalDamage);
+          this.game.addBattleLog(
+            `Dealt ${finalDamage} damage to ${this.game.gameState.enemy.name}!`
+          );
+          this.game.playSound("dealDamage");
+        } else {
+          this.game.addBattleLog(
+            `${this.game.gameState.enemy.name}'s defense blocked the attack!`
+          );
+        }
+        break;
+    }
+
+    setTimeout(() => this.finishPlayerTurn(), GAME_CONFIG.ANIMATION_DURATION);
+  }
+
+  /**
+   * Finish player turn and check for battle end
+   */
+  finishPlayerTurn() {
+    this.game.clearAnimations();
+    this.updateBattleUI();
+
+    if (this.game.gameState.enemy.hp <= 0) {
+      this.winBattle();
+      return;
+    }
+    if (this.game.gameState.player.hp <= 0) {
+      this.game.gameOverScreen.gameOver("Your fighter melted!");
+      return;
+    }
+
+    setTimeout(() => this.executeEnemyMove(), GAME_CONFIG.ENEMY_MOVE_DELAY);
+  }
+
+  /**
+   * Execute enemy move
+   */
+  executeEnemyMove() {
+    if (this.game.gameState.enemy.sanity <= 0) {
+      this.game.addBattleLog(
+        `${this.game.gameState.enemy.name} is having a meltdown and skips their turn!`
+      );
+      this.game.gameState.enemy.sanity = Math.floor(
+        this.game.gameState.enemy.maxSanity *
+          GAME_CONFIG.MALFUNCTION_SANITY_RECOVERY
+      );
+      this.finishEnemyTurn();
+      return;
+    }
+
+    try {
+      const patternIndex =
+        this.game.gameState.turnCount %
+        this.game.gameState.enemy.pattern.length;
+      const enemyMoveType = this.game.gameState.enemy.pattern[patternIndex];
+      const enemyMove = MOVE_DEFINITIONS[enemyMoveType];
+
+      if (!enemyMove) {
+        console.error(`Invalid enemy move: ${enemyMoveType}`);
+        this.finishEnemyTurn();
+        return;
+      }
+
+      const playerSprite = document.getElementById("player-sprite");
+      const enemySprite = document.getElementById("enemy-sprite");
+
+      const sanityCost = enemyMove.baseCost;
+      this.game.gameState.enemy.sanity = Math.max(
+        0,
+        this.game.gameState.enemy.sanity - sanityCost
+      );
+      this.game.addBattleLog(
+        `${this.game.gameState.enemy.name} uses ${enemyMove.name}, costing ${sanityCost} sanity!`
+      );
+
+      switch (enemyMoveType) {
+        case "defend":
+          this.game.addAnimationClass(enemySprite, "defend-animation");
+          this.game.addBattleLog(
+            `${this.game.gameState.enemy.name} takes a defensive stance!`
+          );
+          this.game.gameState.enemyDefending = true;
+          break;
+
+        case "boost":
+          this.game.gameState.enemyBoost = true;
+          this.game.addAnimationClass(enemySprite, "boost-animation");
+          this.game.addBattleLog(
+            `${this.game.gameState.enemy.name} is powering up!`
+          );
+          break;
+
+        case "light":
+        case "heavy":
+          this.game.addAnimationClass(enemySprite, "attack-animation");
+          let damage = enemyMove.damage + this.game.gameState.enemy.attack;
+
+          if (this.game.gameState.enemyBoost) {
+            damage = Math.floor(damage * GAME_CONFIG.BOOST_MULTIPLIER);
+            this.game.gameState.enemyBoost = false;
+            this.game.addBattleLog(
+              `${this.game.gameState.enemy.name} uses boosted ${enemyMove.name}!`
+            );
+          } else {
+            this.game.addBattleLog(
+              `${this.game.gameState.enemy.name} uses ${enemyMove.name}!`
+            );
+          }
+
+          if (!this.game.gameState.playerDefending) {
+            const finalDamage = CONFIG_UTILS.calculateDamage(
+              damage,
+              this.game.gameState.player.defense
+            );
+            this.game.gameState.player.hp = Math.max(
+              0,
+              this.game.gameState.player.hp - finalDamage
+            );
+            this.game.addAnimationClass(playerSprite, "hit-animation");
+            this.game.showDamageNumber(playerSprite, finalDamage);
+            this.game.addBattleLog(`You took ${finalDamage} damage!`);
+            this.game.playSound("takeDamage");
+
+            if (this.game.gameState.playerBoost) {
+              this.game.gameState.playerBoost = false;
+              this.game.addBattleLog("Your Sugar Rush was interrupted!");
+            }
+          } else {
+            this.game.addBattleLog("Your Ice Shield blocked the attack!");
+          }
+          break;
+      }
+
+      setTimeout(() => this.finishEnemyTurn(), GAME_CONFIG.ANIMATION_DURATION);
+    } catch (error) {
+      console.error("Failed to execute enemy move:", error);
+      this.finishEnemyTurn();
+    }
+  }
+
+  /**
+   * Finish enemy turn and prepare for next turn
+   */
+  finishEnemyTurn() {
+    this.game.clearAnimations();
+
+    this.game.gameState.playerDefending = false;
+    this.game.gameState.enemyDefending = false;
+
+    if (this.game.gameState.player.hp <= 0) {
+      this.game.gameOverScreen.gameOver("Your fighter melted!");
+      return;
+    }
+    if (this.game.gameState.enemy.hp <= 0) {
+      this.winBattle();
+      return;
+    }
+
+    this.game.gameState.turnCount++;
+    this.game.gameState.isPlayerTurn = true;
+
+    this.game.gameState.player.sanity = Math.min(
+      this.game.gameState.player.sanity + GAME_CONFIG.SANITY_RECOVERY_PER_TURN,
+      this.game.gameState.player.maxSanity
+    );
+    this.game.gameState.enemy.sanity = Math.min(
+      this.game.gameState.enemy.sanity + GAME_CONFIG.SANITY_RECOVERY_PER_TURN,
+      this.game.gameState.enemy.maxSanity
+    );
+
+    this.updateBattleUI();
+  }
+
+  /**
+   * Win current battle
+   */
+  winBattle() {
+    this.game.addBattleLog(`${this.game.gameState.enemy.name} defeated!`);
+    this.game.playSound("battleWin");
+
+    if (this.game.gameState.currentBattle >= GAME_CONFIG.TOTAL_BATTLES) {
+      setTimeout(() => {
+        this.game.playMusic("victory");
+        this.game.playSound("victorySound");
+        this.game.showScreen("victory-screen");
+      }, 1500);
+    } else {
+      setTimeout(() => {
+        this.game.playMusic("training");
+        this.game.showScreen("training-screen");
+        this.game.training.startTraining();
+      }, 1500);
+    }
+  }
+
+  /**
+   * Update tooltip for move button
+   */
+  updateTooltip(moveType) {
+    if (!CONFIG_UTILS.isValidMoveType(moveType)) return;
+
+    const move = MOVE_DEFINITIONS[moveType];
+    const tooltip = document.getElementById(`tooltip-${moveType}`);
+
+    if (!tooltip) return;
+
+    let html = `<div><strong>${move.description}</strong></div>`;
+    html +=
+      '<div style="margin-top: 8px;">Sanity cost depends on enemy action:</div>';
+    html += `<div class="tooltip-row">vs Light Attack: <span class="sanity-preview">-${move.sanityCosts.vsLight}</span></div>`;
+    html += `<div class="tooltip-row">vs Heavy Attack: <span class="sanity-preview">-${move.sanityCosts.vsHeavy}</span></div>`;
+    html += `<div class="tooltip-row">vs Defend: <span class="sanity-preview">-${move.sanityCosts.vsDefend}</span></div>`;
+    html += `<div class="tooltip-row">vs Boost: <span class="sanity-preview">-${move.sanityCosts.vsBoost}</span></div>`;
+
+    if (moveType === "light" || moveType === "heavy") {
+      const damage = move.damage + this.game.gameState.player.attack;
+      const boostedDamage = Math.floor(damage * GAME_CONFIG.BOOST_MULTIPLIER);
+      html += `<div style="margin-top: 8px;">Damage: ${damage}`;
+      if (this.game.gameState.playerBoost) {
+        html += ` → <span style="color: #f5576c">${boostedDamage} (boosted!)</span>`;
+      }
+      html += "</div>";
+    }
+
+    tooltip.innerHTML = html;
+  }
+
+  /**
+   * Start talk mechanic
+   */
+  startTalk() {
+    if (
+      !this.game.gameState.isPlayerTurn ||
+      this.game.gameState.player.sanity >=
+        this.game.gameState.player.maxSanity - 1
+    ) {
+      return;
+    }
+
+    try {
+      this.game.gameState.isPlayerTurn = false;
+      this.game.playSound("talkStart");
+
+      const fighterType = this.game.gameState.player.name.toLowerCase();
+      const statements =
+        FIGHTER_STATEMENTS[fighterType] || FIGHTER_STATEMENTS.vanilla;
+      const statement = CONFIG_UTILS.getRandomElement(statements);
+
+      const fighterStatementEl = document.getElementById("fighter-statement");
+      if (fighterStatementEl) {
+        fighterStatementEl.textContent = `"${statement}"`;
+      }
+
+      const shuffled = [...TALK_RESPONSES]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+
+      const optionsContainer = document.getElementById("talk-options");
+      if (optionsContainer) {
+        optionsContainer.innerHTML = "";
+
+        shuffled.forEach((option) => {
+          const btn = document.createElement("button");
+          btn.className = "dialogue-btn";
+          btn.textContent = option.text;
+          btn.addEventListener("click", () =>
+            this.handleTalkResponse(option.success, option.sanity)
+          );
+          optionsContainer.appendChild(btn);
+        });
+      }
+
+      const talkDialog = document.getElementById("talk-dialog");
+      if (talkDialog) {
+        talkDialog.classList.add("active");
+      }
+    } catch (error) {
+      console.error("Failed to start talk:", error);
+      this.game.gameState.isPlayerTurn = true;
+    }
+  }
+
+  /**
+   * Handle talk response
+   */
+  handleTalkResponse(success, sanityGain) {
+    const talkDialog = document.getElementById("talk-dialog");
+    if (talkDialog) {
+      talkDialog.classList.remove("active");
+    }
+
+    if (success) {
+      const actualGain = Math.min(
+        sanityGain,
+        this.game.gameState.player.maxSanity - this.game.gameState.player.sanity
+      );
+      this.game.gameState.player.sanity += actualGain;
+      this.game.addBattleLog(
+        `Your encouraging words restored ${actualGain} sanity!`
+      );
+      this.game.playSound("talkSuccess");
+
+      const playerSprite = document.getElementById("player-sprite");
+      this.game.showDamageNumber(playerSprite, actualGain, true);
+    } else {
+      this.game.playSound("talkFail");
+      if (sanityGain > 0) {
+        this.game.gameState.player.sanity = Math.min(
+          this.game.gameState.player.sanity + 1,
+          this.game.gameState.player.maxSanity
+        );
+        this.game.addBattleLog("Your words helped a little... (+1 sanity)");
+      } else {
+        this.game.addBattleLog("Your words didn't help at all!");
+      }
+    }
+
+    this.updateBattleUI();
+
+    setTimeout(() => {
+      if (this.game.gameState.player.hp <= 0) {
+        this.game.gameOverScreen.gameOver("Your fighter melted!");
+        return;
+      }
+      this.executeEnemyMove();
+    }, 1000);
+  }
+
+  /**
+   * Trigger malfunction state
+   */
+  triggerMalfunction() {
+    this.game.gameState.isMalfunctioning = true;
+    this.game.addBattleLog(
+      `${this.game.gameState.player.name} is having a meltdown!`
+    );
+    this.game.playSound("malfunction");
+
+    setTimeout(() => {
+      this.game.showScreen("talkdown-screen");
+      this.startTalkDown();
+    }, 1500);
+  }
+
+  /**
+   * Start talk-down sequence
+   */
+  startTalkDown() {
+    try {
+      const message = CONFIG_UTILS.getRandomElement(MALFUNCTION_MESSAGES);
+      const malfunctionText = document.getElementById("malfunction-text");
+      if (malfunctionText) {
+        malfunctionText.textContent = message;
+      }
+
+      const shuffled = [...TALKDOWN_OPTIONS]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+
+      const optionsContainer = document.getElementById("dialogue-options");
+      if (optionsContainer) {
+        optionsContainer.innerHTML = "";
+
+        shuffled.forEach((option) => {
+          const btn = document.createElement("button");
+          btn.className = "dialogue-btn";
+          btn.textContent = option.text;
+          btn.addEventListener("click", () =>
+            this.handleDialogue(option.success)
+          );
+          optionsContainer.appendChild(btn);
+        });
+      }
+    } catch (error) {
+      console.error("Failed to start talk-down:", error);
+    }
+  }
+
+  /**
+   * Handle dialogue choice in talk-down
+   */
+  handleDialogue(success) {
+    if (success) {
+      this.game.gameState.player.sanity = Math.floor(
+        this.game.gameState.player.maxSanity * 0.5
+      );
+      this.game.gameState.isMalfunctioning = false;
+      this.game.addBattleLog(
+        `${this.game.gameState.player.name} calmed down! Sanity restored to ${this.game.gameState.player.sanity}.`
+      );
+      this.game.playSound("malfunctionRecover");
+      this.game.showScreen("battle-screen");
+      this.updateBattleUI();
+
+      setTimeout(() => {
+        if (this.game.gameState.player.hp <= 0) {
+          this.game.gameOverScreen.gameOver("Your fighter melted!");
+          return;
+        }
+        this.executeEnemyMove();
+      }, 1000);
+    } else {
+      this.game.addBattleLog("Your words didn't help!");
+      this.startTalkDown();
+    }
+  }
+}

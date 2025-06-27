@@ -246,7 +246,7 @@ const TRAINING_CONES = [
   { emoji: "🍧", image: "images/cone_shaved.png" },
 ];
 
-// Slot machine configuration with image references
+// Enhanced Slot machine configuration with new coin symbol and balanced rewards
 const SLOT_CONFIG = {
   symbols: [
     { emoji: "🍦", image: "images/slot_vanilla.png", name: "vanilla" },
@@ -254,37 +254,55 @@ const SLOT_CONFIG = {
     { emoji: "🍓", image: "images/slot_strawberry.png", name: "strawberry" },
     { emoji: "🍨", image: "images/slot_soft.png", name: "soft" },
     { emoji: "🧊", image: "images/slot_ice.png", name: "ice" },
+    { emoji: "🪙", image: "images/slot_coin.png", name: "coin" }, // New coin symbol
   ],
-  weights: [30, 25, 25, 15, 5],
+  weights: [25, 20, 20, 15, 10, 10], // Balanced weights for 6 symbols
   rewards: {
     triple: {
+      vanilla: {
+        name: "VANILLA VICTORY!",
+        attack: 2,
+        color: "#f5e6d3",
+      },
+      chocolate: {
+        name: "CHOCOLATE CHAMPION!",
+        defense: 2,
+        color: "#8b4513",
+      },
+      strawberry: {
+        name: "STRAWBERRY SUPREME!",
+        hp: 15,
+        color: "#ff6b6b",
+      },
+      soft: {
+        name: "SOFT SERVE SUCCESS!",
+        sanity: 2,
+        color: "#ffeaa7",
+      },
       ice: {
-        name: "SUPER JACKPOT!",
-        attack: 5,
-        defense: 5,
-        maxSanity: 2,
-        restoreSanity: true,
+        name: "ICE COLD JACKPOT!",
+        attack: 1,
+        defense: 1,
+        sanity: 1,
+        hp: 10,
         color: "#48dbfb",
       },
-      default: {
-        name: "JACKPOT!",
-        attack: 2,
-        defense: 2,
-        hp: 15,
-        color: "#f5576c",
+      coin: {
+        name: "COIN JACKPOT!",
+        points: 15,
+        color: "#fdcb6e",
       },
     },
-    double: {
-      attack: { name: "Nice! +1 Attack!", attack: 1 },
-      defense: { name: "Nice! +1 Defense!", defense: 1 },
-      hp: { name: "Nice! +8 HP!", hp: 8 },
-    },
-    consolation: {
-      name: "No match, but +3 HP as consolation!",
-      hp: 3,
-      color: "#95a5a6",
-    },
   },
+  // Paytable for display
+  paytable: [
+    { symbol: "🍦", name: "Vanilla", reward: "+2 Attack" },
+    { symbol: "🍫", name: "Chocolate", reward: "+2 Defense" },
+    { symbol: "🍓", name: "Strawberry", reward: "+15 HP" },
+    { symbol: "🍨", name: "Soft Serve", reward: "+2 Max Sanity" },
+    { symbol: "🧊", name: "Ice", reward: "+1 All Stats & +10 HP" },
+    { symbol: "🪙", name: "Coin", reward: "+15 Training Points" },
+  ],
   sounds: {
     spin: "audio/slot_spin.mp3",
     win: "audio/slot_win.mp3",
@@ -394,8 +412,6 @@ const AUDIO_CONFIG = {
 const CONFIG_UTILS = {
   /**
    * Get a random element from an array
-   * @param {Array} array - The array to pick from
-   * @returns {*} Random element from the array
    */
   getRandomElement(array) {
     if (!Array.isArray(array) || array.length === 0) {
@@ -407,7 +423,6 @@ const CONFIG_UTILS = {
 
   /**
    * Get a weighted random symbol for slot machine
-   * @returns {Object} Random symbol object based on weights
    */
   getWeightedSlotSymbol() {
     const { symbols, weights } = SLOT_CONFIG;
@@ -430,7 +445,6 @@ const CONFIG_UTILS = {
 
   /**
    * Get a random training cone
-   * @returns {Object} Random cone object with emoji and image
    */
   getRandomTrainingCone() {
     return this.getRandomElement(TRAINING_CONES);
@@ -438,8 +452,6 @@ const CONFIG_UTILS = {
 
   /**
    * Validate fighter type
-   * @param {string} fighterType - The fighter type to validate
-   * @returns {boolean} True if valid fighter type
    */
   isValidFighterType(fighterType) {
     return fighterType && FIGHTER_TEMPLATES.hasOwnProperty(fighterType);
@@ -447,8 +459,6 @@ const CONFIG_UTILS = {
 
   /**
    * Validate move type
-   * @param {string} moveType - The move type to validate
-   * @returns {boolean} True if valid move type
    */
   isValidMoveType(moveType) {
     return moveType && MOVE_DEFINITIONS.hasOwnProperty(moveType);
@@ -456,8 +466,6 @@ const CONFIG_UTILS = {
 
   /**
    * Get enemy template for battle number
-   * @param {number} battleNumber - The battle number (1-based)
-   * @returns {Object|null} Enemy template or null if invalid
    */
   getEnemyTemplate(battleNumber) {
     if (battleNumber < 1 || battleNumber > ENEMY_TEMPLATES.length) {
@@ -469,10 +477,6 @@ const CONFIG_UTILS = {
 
   /**
    * Clamp a value between min and max
-   * @param {number} value - Value to clamp
-   * @param {number} min - Minimum value
-   * @param {number} max - Maximum value
-   * @returns {number} Clamped value
    */
   clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -480,9 +484,6 @@ const CONFIG_UTILS = {
 
   /**
    * Calculate damage with defense reduction
-   * @param {number} baseDamage - Base damage amount
-   * @param {number} defense - Defense value
-   * @returns {number} Final damage (minimum 1)
    */
   calculateDamage(baseDamage, defense = 0) {
     return Math.max(1, baseDamage - defense);
@@ -490,8 +491,6 @@ const CONFIG_UTILS = {
 
   /**
    * Play audio file with error handling
-   * @param {string} audioPath - Path to audio file
-   * @param {number} volume - Volume level (0-1)
    */
   playAudio(audioPath, volume = 1) {
     try {
@@ -507,16 +506,12 @@ const CONFIG_UTILS = {
 
   /**
    * Update image source with error handling
-   * @param {HTMLImageElement} imgElement - Image element to update
-   * @param {string} imagePath - Path to image file
-   * @param {string} altText - Alt text for image
    */
   updateImage(imgElement, imagePath, altText = "") {
     if (!imgElement) return;
 
     imgElement.onerror = () => {
       console.warn(`Could not load image: ${imagePath}`);
-      // Could set a fallback image here if desired
     };
 
     imgElement.src = imagePath;
