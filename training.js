@@ -357,12 +357,16 @@ class Training {
       if (reward) {
         if (rewardType === "health") {
           const bonusReward = document.getElementById("bonus-reward");
-          if (
-            bonusReward &&
-            this.game.gameState.trainingScore >=
+          if (bonusReward) {
+            // Show the bonus reward if they have enough training score for the threshold
+            if (
+              this.game.gameState.trainingScore >=
               GAME_CONFIG.TRAINING_BONUS_THRESHOLD
-          ) {
-            bonusReward.classList.add("available");
+            ) {
+              bonusReward.classList.add("available");
+            }
+
+            // Update the button content and state regardless of threshold
             bonusReward.innerHTML = `
               <img src="${reward.icon}" alt="Health Upgrade" class="upgrade-icon" />
               <div class="btn-text">${reward.name} (${cost} pts)</div>

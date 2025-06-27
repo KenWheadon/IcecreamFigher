@@ -141,10 +141,10 @@ const MOVE_DEFINITIONS = {
     baseCost: 4,
     description: "Big damage, risky if countered",
     sanityCosts: {
-      vsLight: 3,
-      vsHeavy: 6,
-      vsDefend: 2,
-      vsBoost: 4,
+      vsLight: 2,
+      vsHeavy: 3,
+      vsDefend: 6,
+      vsBoost: 0,
     },
     sound: "audio/attack_heavy.mp3",
     icon: "images/attack_heavy_icon.png",
@@ -172,7 +172,7 @@ const MOVE_DEFINITIONS = {
       vsLight: 3,
       vsHeavy: 5,
       vsDefend: 1,
-      vsBoost: 2,
+      vsBoost: 1,
     },
     sound: "audio/boost.mp3",
     icon: "images/boost_icon.png",
@@ -258,7 +258,7 @@ const SLOT_CONFIG = {
   ],
   // Adjusted weights to give approximately 75% win rate
   // With 6 symbols, to get ~75% win rate for triple matches, we need heavily weighted distribution
-  weights: [90, 7, 2, 1, 0, 0], // This should give roughly 75% win chance
+  weights: [90, 70, 50, 30, 10, 5], // This should give roughly 75% win chance
   rewards: {
     triple: {
       vanilla: {

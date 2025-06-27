@@ -272,7 +272,7 @@ class Combat {
         this.game.gameState.playerBoost = true;
         this.game.addAnimationClass(playerSprite, "boost-animation");
         this.game.addBattleLog(
-          `${this.game.gameState.player.name} activates Sugar Rush!`
+          `${this.game.gameState.player.name} activates Sugar Rush! Next attack will deal +60% damage!`
         );
         break;
 
@@ -283,7 +283,7 @@ class Combat {
 
         if (this.game.gameState.playerBoost) {
           damage = Math.floor(damage * GAME_CONFIG.BOOST_MULTIPLIER);
-          this.game.gameState.playerBoost = false;
+          this.game.gameState.playerBoost = false; // Clear boost after applying it
           this.game.addBattleLog(
             `${this.game.gameState.player.name} uses boosted ${move.name}!`
           );
@@ -530,10 +530,14 @@ class Combat {
       html += `<div>${baseDamage} (base) + ${playerAttack} (attack) - ${enemyDefense} (enemy def) = ${finalDamage}</div>`;
 
       if (this.game.gameState.playerBoost) {
-        const boostedDamage = Math.floor(
-          finalDamage * GAME_CONFIG.BOOST_MULTIPLIER
+        const boostedTotal = Math.floor(
+          totalDamage * GAME_CONFIG.BOOST_MULTIPLIER
         );
-        html += `<div style="color: #f5576c;">Boosted: ${boostedDamage} damage!</div>`;
+        const boostedFinal = CONFIG_UTILS.calculateDamage(
+          boostedTotal,
+          enemyDefense
+        );
+        html += `<div style="color: #f5576c; font-weight: bold;">With Sugar Rush: ${boostedFinal} damage!</div>`;
       }
     }
 
