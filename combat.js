@@ -22,15 +22,6 @@ class Combat {
         this.updateTooltip(moveType);
       });
     });
-
-    // // Talk button
-    // const talkBtn = document.getElementById("talk-btn");
-    // if (talkBtn) {
-    //   talkBtn.addEventListener("click", () => {
-    //     this.game.playSound("buttonClick");
-    //     this.startTalk();
-    //   });
-    // }
   }
 
   /**
@@ -62,6 +53,7 @@ class Combat {
       );
 
       this.updateBattleUI();
+      this.updateMoveButtonDamage(); // Update damage display when battle starts
       this.game.addBattleLog(
         `Battle ${this.game.gameState.currentBattle} begins!`
       );
@@ -72,6 +64,33 @@ class Combat {
       this.game.gameOverScreen.gameOver(
         "An error occurred starting the battle!"
       );
+    }
+  }
+
+  /**
+   * Update move button damage display based on current player stats
+   */
+  updateMoveButtonDamage() {
+    if (!this.game.gameState.player) return;
+
+    const lightDamage = CONFIG_UTILS.calculateTotalDamage(
+      "light",
+      this.game.gameState.player.attack
+    );
+    const heavyDamage = CONFIG_UTILS.calculateTotalDamage(
+      "heavy",
+      this.game.gameState.player.attack
+    );
+
+    const lightDisplay = document.getElementById("light-damage-display");
+    const heavyDisplay = document.getElementById("heavy-damage-display");
+
+    if (lightDisplay) {
+      lightDisplay.textContent = `Base Cost: 2 | Damage: ${lightDamage}`;
+    }
+
+    if (heavyDisplay) {
+      heavyDisplay.textContent = `Base Cost: 4 | Damage: ${heavyDamage}`;
     }
   }
 
@@ -95,14 +114,6 @@ class Combat {
           this.game.gameState.isMalfunctioning;
       });
 
-      //   const talkBtn = document.getElementById("talk-btn");
-      //   if (talkBtn) {
-      //     talkBtn.disabled =
-      //       !this.game.gameState.isPlayerTurn ||
-      //       this.game.gameState.player.sanity >=
-      //         this.game.gameState.player.maxSanity - 1;
-      //   }
-
       const dialoguePortrait = document.getElementById("dialogue-portrait");
       if (dialoguePortrait && this.game.gameState.player) {
         CONFIG_UTILS.updateImage(
@@ -111,6 +122,9 @@ class Combat {
           `${this.game.gameState.player.name} Portrait`
         );
       }
+
+      // Update damage display whenever UI updates
+      this.updateMoveButtonDamage();
     } catch (error) {
       console.error("Failed to update battle UI:", error);
     }

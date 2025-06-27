@@ -36,6 +36,10 @@ class FighterSelection {
       this.game.gameState.player = { ...FIGHTER_TEMPLATES[fighterType] };
       this.game.showScreen("battle-screen");
       this.game.playMusic("battle");
+
+      // Update move button damage display after selecting fighter
+      this.game.updateMoveButtonDamage();
+
       this.game.combat.startBattle();
     } catch (error) {
       console.error("Failed to select fighter:", error);

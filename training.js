@@ -446,6 +446,59 @@ class Training {
   }
 
   /**
+   * Clear slot reel feedback classes
+   */
+  clearSlotFeedback() {
+    const reels = ["reel1", "reel2", "reel3"];
+    reels.forEach((reelId) => {
+      const reel = document.getElementById(reelId);
+      if (reel) {
+        reel.classList.remove("winner", "loser");
+      }
+    });
+  }
+
+  /**
+   * Add visual feedback to slot reels
+   */
+  addSlotFeedback(results, isWin) {
+    const reels = ["reel1", "reel2", "reel3"];
+
+    if (isWin) {
+      // All reels are winners
+      reels.forEach((reelId) => {
+        const reel = document.getElementById(reelId);
+        if (reel) {
+          reel.classList.add("winner");
+        }
+      });
+    } else {
+      // Show which reels match and which don't
+      reels.forEach((reelId, index) => {
+        const reel = document.getElementById(reelId);
+        if (reel) {
+          // Check if this reel matches any other reel
+          const currentSymbol = results[index].name;
+          const hasMatch = results.some(
+            (result, i) => i !== index && result.name === currentSymbol
+          );
+
+          if (hasMatch) {
+            reel.classList.add("winner");
+          } else {
+            reel.classList.add("loser");
+          }
+        }
+      });
+    }
+
+    // Clear feedback after a delay
+    setTimeout(() => {
+      this.clearSlotFeedback();
+    }, 2000);
+  }
+
+  /**
    * Spin slot machine with enhanced rewards
    */
   spinSlots() {
@@ -464,7 +517,7 @@ class Training {
       this.game.gameState.slotSpins++;
 
       this.game.updateElement(
-        "training-score",
+        "final-score",
         this.game.gameState.trainingScore.toString()
       );
       this.game.updateElement(
@@ -477,6 +530,9 @@ class Training {
       );
 
       this.game.playSound("spin", 0.5);
+
+      // Clear previous feedback
+      this.clearSlotFeedback();
 
       // Generate results
       const results = [
@@ -541,10 +597,11 @@ class Training {
 
     try {
       // Only give rewards for exactly 3 matching symbols
-      if (
+      const isWin =
         results[0].name === results[1].name &&
-        results[1].name === results[2].name
-      ) {
+        results[1].name === results[2].name;
+
+      if (isWin) {
         const symbolName = results[0].name;
         const reward = SLOT_CONFIG.rewards.triple[symbolName];
 
@@ -569,7 +626,7 @@ class Training {
           if (reward.points) {
             this.game.gameState.trainingScore += reward.points;
             this.game.updateElement(
-              "training-score",
+              "final-score",
               this.game.gameState.trainingScore.toString()
             );
           }
@@ -581,6 +638,9 @@ class Training {
         // No reward for non-matching symbols
         resultElement.innerHTML = `<span style="color: #95a5a6;">No match - try again!</span>`;
       }
+
+      // Add visual feedback to reels
+      this.addSlotFeedback(results, isWin);
 
       this.updateSlotButtonState();
       this.updateTrainingButtonCosts(); // Update in case we got bonus points

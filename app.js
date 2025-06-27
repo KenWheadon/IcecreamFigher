@@ -147,6 +147,15 @@ class IceCreamFighter {
   }
 
   /**
+   * Update move button damage display when player stats change
+   */
+  updateMoveButtonDamage() {
+    if (this.combat && this.combat.updateMoveButtonDamage) {
+      this.combat.updateMoveButtonDamage();
+    }
+  }
+
+  /**
    * Add animation class and track for cleanup
    */
   addAnimationClass(element, animationClass) {
