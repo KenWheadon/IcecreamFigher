@@ -246,7 +246,7 @@ const TRAINING_CONES = [
   { emoji: "🍧", image: "images/cone_shaved.png" },
 ];
 
-// Enhanced Slot machine configuration with new coin symbol and balanced rewards
+// Enhanced Slot machine configuration with MUCH higher win rates (targeting ~75%)
 const SLOT_CONFIG = {
   symbols: [
     { emoji: "🍦", image: "images/slot_vanilla.png", name: "vanilla" },
@@ -254,9 +254,11 @@ const SLOT_CONFIG = {
     { emoji: "🍓", image: "images/slot_strawberry.png", name: "strawberry" },
     { emoji: "🍨", image: "images/slot_soft.png", name: "soft" },
     { emoji: "🧊", image: "images/slot_ice.png", name: "ice" },
-    { emoji: "🪙", image: "images/slot_coin.png", name: "coin" }, // New coin symbol
+    { emoji: "🪙", image: "images/slot_coin.png", name: "coin" },
   ],
-  weights: [25, 20, 20, 15, 10, 10], // Balanced weights for 6 symbols
+  // Adjusted weights to give approximately 75% win rate
+  // With 6 symbols, to get ~75% win rate for triple matches, we need heavily weighted distribution
+  weights: [90, 7, 2, 1, 0, 0], // This should give roughly 75% win chance
   rewards: {
     triple: {
       vanilla: {
@@ -487,6 +489,15 @@ const CONFIG_UTILS = {
    */
   calculateDamage(baseDamage, defense = 0) {
     return Math.max(1, baseDamage - defense);
+  },
+
+  /**
+   * Calculate total attack damage including player's attack stat
+   */
+  calculateTotalDamage(moveType, playerAttack) {
+    const move = MOVE_DEFINITIONS[moveType];
+    if (!move || move.damage === 0) return 0;
+    return move.damage + playerAttack;
   },
 
   /**

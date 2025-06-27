@@ -23,7 +23,12 @@
             </div>
             <h3>Vanilla</h3>
             <p>The Classic</p>
-            <small>Balanced Stats</small>
+            <div class="fighter-stats">
+              <div class="stat-row">HP: 100</div>
+              <div class="stat-row">Attack: 15</div>
+              <div class="stat-row">Defense: 10</div>
+              <div class="stat-row">Sanity: 12</div>
+            </div>
           </div>
           <div class="fighter-option" data-fighter="chocolate">
             <div class="fighter-sprite">
@@ -35,7 +40,12 @@
             </div>
             <h3>Chocolate</h3>
             <p>The Strong</p>
-            <small>High Attack</small>
+            <div class="fighter-stats">
+              <div class="stat-row">HP: 90</div>
+              <div class="stat-row">Attack: 20</div>
+              <div class="stat-row">Defense: 8</div>
+              <div class="stat-row">Sanity: 10</div>
+            </div>
           </div>
           <div class="fighter-option" data-fighter="strawberry">
             <div class="fighter-sprite">
@@ -47,7 +57,12 @@
             </div>
             <h3>Strawberry</h3>
             <p>The Sweet</p>
-            <small>High Defense</small>
+            <div class="fighter-stats">
+              <div class="stat-row">HP: 110</div>
+              <div class="stat-row">Attack: 12</div>
+              <div class="stat-row">Defense: 15</div>
+              <div class="stat-row">Sanity: 14</div>
+            </div>
           </div>
         </div>
       </div>
@@ -129,7 +144,9 @@
             />
             <div class="attack-text">
               <span class="move-name">Scoop Slam</span>
-              <div class="move-cost">Base Cost: 2 | Damage: 15</div>
+              <div class="move-cost" id="light-damage-display">
+                Base Cost: 2 | Damage: 15
+              </div>
             </div>
             <div class="move-tooltip" id="tooltip-light"></div>
           </button>
@@ -141,7 +158,9 @@
             />
             <div class="attack-text">
               <span class="move-name">Sprinkle Blast</span>
-              <div class="move-cost">Base Cost: 5 | Damage: 35</div>
+              <div class="move-cost" id="heavy-damage-display">
+                Base Cost: 5 | Damage: 35
+              </div>
             </div>
             <div class="move-tooltip" id="tooltip-heavy"></div>
           </button>
@@ -511,6 +530,52 @@
       <p id="fighter-statement" role="status"></p>
       <div class="dialogue-options" id="talk-options"></div>
     </div>
+
+    <style>
+      /* Fighter stats styling */
+      .fighter-stats {
+        margin-top: 10px;
+        font-size: 14px;
+        text-align: left;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 10px;
+        border-radius: 8px;
+      }
+
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        margin: 3px 0;
+        font-weight: bold;
+      }
+
+      /* Slot reel feedback styles */
+      .slot-reel {
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .slot-reel.winner {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        box-shadow: 0 0 20px rgba(240, 147, 251, 0.6);
+        animation: winner-pulse 0.8s ease-in-out;
+      }
+
+      .slot-reel.loser {
+        background: rgba(255, 255, 255, 0.1);
+        filter: grayscale(50%);
+      }
+
+      @keyframes winner-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+      }
+    </style>
 
     <script src="config.js"></script>
     <script src="fighter-selection.js"></script>
