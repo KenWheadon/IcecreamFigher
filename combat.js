@@ -68,29 +68,35 @@ class Combat {
   }
 
   /**
-   * Update move button damage display based on current player stats
+   * Update move button damage display based on current player stats and enemy defense
    */
   updateMoveButtonDamage() {
-    if (!this.game.gameState.player) return;
+    if (!this.game.gameState.player || !this.game.gameState.enemy) return;
 
-    const lightDamage = CONFIG_UTILS.calculateTotalDamage(
-      "light",
-      this.game.gameState.player.attack
+    const lightBaseDamage =
+      MOVE_DEFINITIONS.light.damage + this.game.gameState.player.attack;
+    const heavyBaseDamage =
+      MOVE_DEFINITIONS.heavy.damage + this.game.gameState.player.attack;
+
+    // Calculate final damage after enemy defense
+    const lightFinalDamage = CONFIG_UTILS.calculateDamage(
+      lightBaseDamage,
+      this.game.gameState.enemy.defense
     );
-    const heavyDamage = CONFIG_UTILS.calculateTotalDamage(
-      "heavy",
-      this.game.gameState.player.attack
+    const heavyFinalDamage = CONFIG_UTILS.calculateDamage(
+      heavyBaseDamage,
+      this.game.gameState.enemy.defense
     );
 
     const lightDisplay = document.getElementById("light-damage-display");
     const heavyDisplay = document.getElementById("heavy-damage-display");
 
     if (lightDisplay) {
-      lightDisplay.textContent = `Base Cost: 2 | Damage: ${lightDamage}`;
+      lightDisplay.textContent = `Base Cost: 2 | Damage: ${lightFinalDamage}`;
     }
 
     if (heavyDisplay) {
-      heavyDisplay.textContent = `Base Cost: 4 | Damage: ${heavyDamage}`;
+      heavyDisplay.textContent = `Base Cost: 4 | Damage: ${heavyFinalDamage}`;
     }
   }
 
@@ -131,7 +137,7 @@ class Combat {
   }
 
   /**
-   * Update UI for a specific fighter
+   * Update UI for a specific fighter (enhanced with battle stats)
    */
   updateFighterUI(type, fighter) {
     const elements = {
@@ -162,6 +168,39 @@ class Combat {
     if (elements.sanityBar) {
       const sanityPercent = (fighter.sanity / fighter.maxSanity) * 100;
       elements.sanityBar.style.width = `${Math.max(0, sanityPercent)}%`;
+    }
+
+    // Update battle stats display
+    this.updateBattleStats(type, fighter);
+  }
+
+  /**
+   * Update battle stats display for a fighter
+   */
+  updateBattleStats(type, fighter) {
+    const statsContainer = document.querySelector(
+      `#${
+        type === "player" ? "battle-screen" : "battle-screen"
+      } .fighter-card:${
+        type === "player" ? "first-child" : "last-child"
+      } .stats`
+    );
+
+    if (statsContainer) {
+      // Check if battle stats already exist
+      let battleStatsDiv = statsContainer.querySelector(".battle-stats");
+      if (!battleStatsDiv) {
+        battleStatsDiv = document.createElement("div");
+        battleStatsDiv.className = "battle-stats";
+        battleStatsDiv.style.marginTop = "10px";
+        battleStatsDiv.style.fontSize = "14px";
+        battleStatsDiv.style.color = "#ddd";
+        statsContainer.appendChild(battleStatsDiv);
+      }
+
+      battleStatsDiv.innerHTML = `
+        <div>Attack: ${fighter.attack} | Defense: ${fighter.defense}</div>
+      `;
     }
   }
 
@@ -461,7 +500,7 @@ class Combat {
   }
 
   /**
-   * Update tooltip for move button
+   * Update tooltip for move button (enhanced with damage calculation)
    */
   updateTooltip(moveType) {
     if (!CONFIG_UTILS.isValidMoveType(moveType)) return;
@@ -469,25 +508,41 @@ class Combat {
     const move = MOVE_DEFINITIONS[moveType];
     const tooltip = document.getElementById(`tooltip-${moveType}`);
 
-    if (!tooltip) return;
+    if (!tooltip || !this.game.gameState.enemy) return;
 
     let html = `<div><strong>${move.description}</strong></div>`;
+
+    // Show damage calculation for attack moves
+    if (
+      (moveType === "light" || moveType === "heavy") &&
+      this.game.gameState.player
+    ) {
+      const baseDamage = move.damage;
+      const playerAttack = this.game.gameState.player.attack;
+      const enemyDefense = this.game.gameState.enemy.defense;
+      const totalDamage = baseDamage + playerAttack;
+      const finalDamage = CONFIG_UTILS.calculateDamage(
+        totalDamage,
+        enemyDefense
+      );
+
+      html += `<div style="margin-top: 8px;"><strong>Damage Calculation:</strong></div>`;
+      html += `<div>${baseDamage} (base) + ${playerAttack} (attack) - ${enemyDefense} (enemy def) = ${finalDamage}</div>`;
+
+      if (this.game.gameState.playerBoost) {
+        const boostedDamage = Math.floor(
+          finalDamage * GAME_CONFIG.BOOST_MULTIPLIER
+        );
+        html += `<div style="color: #f5576c;">Boosted: ${boostedDamage} damage!</div>`;
+      }
+    }
+
     html +=
       '<div style="margin-top: 8px;">Sanity cost depends on enemy action:</div>';
     html += `<div class="tooltip-row">vs Light Attack: <span class="sanity-preview">-${move.sanityCosts.vsLight}</span></div>`;
     html += `<div class="tooltip-row">vs Heavy Attack: <span class="sanity-preview">-${move.sanityCosts.vsHeavy}</span></div>`;
     html += `<div class="tooltip-row">vs Defend: <span class="sanity-preview">-${move.sanityCosts.vsDefend}</span></div>`;
     html += `<div class="tooltip-row">vs Boost: <span class="sanity-preview">-${move.sanityCosts.vsBoost}</span></div>`;
-
-    if (moveType === "light" || moveType === "heavy") {
-      const damage = move.damage + this.game.gameState.player.attack;
-      const boostedDamage = Math.floor(damage * GAME_CONFIG.BOOST_MULTIPLIER);
-      html += `<div style="margin-top: 8px;">Damage: ${damage}`;
-      if (this.game.gameState.playerBoost) {
-        html += ` → <span style="color: #f5576c">${boostedDamage} (boosted!)</span>`;
-      }
-      html += "</div>";
-    }
 
     tooltip.innerHTML = html;
   }

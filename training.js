@@ -344,7 +344,7 @@ class Training {
   }
 
   /**
-   * Update training button costs and availability
+   * Update training button costs and availability (fixed consistent costs)
    */
   updateTrainingButtonCosts() {
     const buttons = document.querySelectorAll("[data-training]");
@@ -381,10 +381,10 @@ class Training {
   }
 
   /**
-   * Get cost for training reward based on purchases made
+   * Get cost for training reward based on purchases made (fixed consistent pricing)
    */
   getTrainingCost(rewardType) {
-    const baseCost = 5;
+    const baseCost = 5; // All training rewards have the same base cost
     return baseCost + this.game.gameState.trainingPurchases * 5;
   }
 
@@ -459,38 +459,21 @@ class Training {
   }
 
   /**
-   * Add visual feedback to slot reels
+   * Add visual feedback to slot reels (fixed to only highlight on 3-match wins)
    */
   addSlotFeedback(results, isWin) {
     const reels = ["reel1", "reel2", "reel3"];
 
     if (isWin) {
-      // All reels are winners
+      // Only highlight all reels for true wins (3 matching symbols)
       reels.forEach((reelId) => {
         const reel = document.getElementById(reelId);
         if (reel) {
           reel.classList.add("winner");
         }
       });
-    } else {
-      // Show which reels match and which don't
-      reels.forEach((reelId, index) => {
-        const reel = document.getElementById(reelId);
-        if (reel) {
-          // Check if this reel matches any other reel
-          const currentSymbol = results[index].name;
-          const hasMatch = results.some(
-            (result, i) => i !== index && result.name === currentSymbol
-          );
-
-          if (hasMatch) {
-            reel.classList.add("winner");
-          } else {
-            reel.classList.add("loser");
-          }
-        }
-      });
     }
+    // No highlighting for partial matches or losses
 
     // Clear feedback after a delay
     setTimeout(() => {
@@ -499,7 +482,38 @@ class Training {
   }
 
   /**
-   * Spin slot machine with enhanced rewards
+   * Highlight paytable row for winning combination
+   */
+  highlightPaytableWin(symbolName) {
+    // Clear previous highlights
+    const paytableRows = document.querySelectorAll(".paytable-row");
+    paytableRows.forEach((row) => {
+      row.classList.remove("paytable-winner");
+    });
+
+    // Highlight winning row
+    const paytableRows2 = document.querySelectorAll(".paytable-row");
+    paytableRows2.forEach((row) => {
+      const symbols = row.querySelectorAll(".paytable-symbol");
+      if (symbols.length > 0) {
+        const firstSymbol = symbols[0];
+        const symbolAlt = firstSymbol.alt.toLowerCase();
+        if (symbolAlt === symbolName || symbolAlt.includes(symbolName)) {
+          row.classList.add("paytable-winner");
+        }
+      }
+    });
+
+    // Remove highlight after delay
+    setTimeout(() => {
+      paytableRows.forEach((row) => {
+        row.classList.remove("paytable-winner");
+      });
+    }, 3000);
+  }
+
+  /**
+   * Spin slot machine with enhanced rewards and feedback
    */
   spinSlots() {
     const cost = 1 + this.game.gameState.slotSpins;
@@ -589,7 +603,7 @@ class Training {
   }
 
   /**
-   * Check slot machine results and apply rewards (only for 3 matching symbols)
+   * Check slot machine results and apply rewards (enhanced feedback)
    */
   checkSlotResults(results) {
     const resultElement = document.getElementById("slot-result");
@@ -601,11 +615,34 @@ class Training {
         results[0].name === results[1].name &&
         results[1].name === results[2].name;
 
+      // Create slot message area if it doesn't exist
+      let slotMessage = document.getElementById("slot-win-message");
+      if (!slotMessage) {
+        slotMessage = document.createElement("div");
+        slotMessage.id = "slot-win-message";
+        slotMessage.style.cssText = `
+          text-align: center;
+          font-size: 18px;
+          font-weight: bold;
+          margin: 10px 0;
+          min-height: 25px;
+          animation: fadeIn 0.5s ease-in;
+        `;
+
+        const slotReels = document.querySelector(".slot-reels");
+        if (slotReels) {
+          slotReels.parentNode.insertBefore(slotMessage, slotReels.nextSibling);
+        }
+      }
+
       if (isWin) {
         const symbolName = results[0].name;
         const reward = SLOT_CONFIG.rewards.triple[symbolName];
 
         if (reward) {
+          // Show big win message
+          slotMessage.innerHTML = `<span style="color: ${reward.color}; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">🎉 YOU WON! 🎉</span>`;
+
           // Apply the reward
           if (reward.attack) this.game.gameState.player.attack += reward.attack;
           if (reward.defense)
@@ -633,11 +670,22 @@ class Training {
 
           resultElement.innerHTML = `<span style="color: ${reward.color};">🎉 ${reward.name}</span>`;
           this.game.playSound(symbolName === "ice" ? "jackpot" : "win");
+
+          // Highlight paytable
+          this.highlightPaytableWin(symbolName);
         }
       } else {
-        // No reward for non-matching symbols
+        // Show lose message
+        slotMessage.innerHTML = `<span style="color: #95a5a6;">YOU LOSE</span>`;
         resultElement.innerHTML = `<span style="color: #95a5a6;">No match - try again!</span>`;
       }
+
+      // Clear message after delay
+      setTimeout(() => {
+        if (slotMessage) {
+          slotMessage.innerHTML = "";
+        }
+      }, 3000);
 
       // Add visual feedback to reels
       this.addSlotFeedback(results, isWin);

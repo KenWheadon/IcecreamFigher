@@ -287,6 +287,7 @@
                 />
               </div>
             </div>
+            <!-- Slot Win/Lose Message will be inserted here dynamically -->
             <button class="move-btn" id="spin-btn">
               <img
                 src="images/slot_spin_icon.png"
@@ -294,7 +295,7 @@
                 class="move-icon"
               />
               <div class="slot-btn-text">
-                Spin! (-<span id="spin-cost">1</span> Points)
+                <span id="spin-cost">1</span> Points
               </div>
             </button>
             <div id="slot-result" role="status" aria-live="polite"></div>
@@ -495,60 +496,6 @@
       <p id="fighter-statement" role="status"></p>
       <div class="dialogue-options" id="talk-options"></div>
     </div>
-
-    <style>
-      /* Fighter stats styling */
-      .fighter-stats {
-        margin-top: 10px;
-        font-size: 14px;
-        text-align: left;
-        background: rgba(255, 255, 255, 0.2);
-        padding: 10px;
-        border-radius: 8px;
-      }
-
-      .stat-row {
-        display: flex;
-        justify-content: space-between;
-        margin: 3px 0;
-        font-weight: bold;
-      }
-
-      /* Slot reel feedback styles */
-      .slot-reel {
-        position: relative;
-        transition: all 0.3s ease;
-      }
-
-      .slot-reel.winner {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        box-shadow: 0 0 20px rgba(240, 147, 251, 0.6);
-        animation: winner-pulse 0.8s ease-in-out;
-      }
-
-      .slot-reel.loser {
-        background: rgba(255, 255, 255, 0.1);
-        filter: grayscale(50%);
-      }
-
-      @keyframes winner-pulse {
-        0%,
-        100% {
-          transform: scale(1);
-        }
-        50% {
-          transform: scale(1.1);
-        }
-      }
-
-      /* Better mobile responsiveness for fighter stats */
-      @media (max-width: 768px) {
-        .fighter-stats {
-          font-size: 12px;
-          padding: 8px;
-        }
-      }
-    </style>
 
     <script src="config.js"></script>
     <script src="fighter-selection.js"></script>
