@@ -16,6 +16,7 @@ class IceCreamFighter {
       trainingCombo: 0,
       trainingActive: false,
       slotSpins: 0,
+      trainingPurchases: 0, // Track stat purchases during current training
       currentScreen: "fighter-select-screen",
     };
 
@@ -152,10 +153,12 @@ class IceCreamFighter {
     const trainingTarget = document.getElementById("training-target");
     if (trainingTarget) {
       trainingTarget.addEventListener("click", (e) => {
-        if (e.target.classList.contains("moving-cone")) {
-          const points = parseInt(e.target.dataset.points) || 1;
+        // Check if clicked element or its parent has moving-cone class
+        const coneElement = e.target.closest(".moving-cone");
+        if (coneElement) {
+          const points = parseInt(coneElement.dataset.points) || 1;
           this.playSound("coneClick");
-          this.collectCone(e.target, points);
+          this.collectCone(coneElement, points);
         }
       });
     }
@@ -968,6 +971,7 @@ class IceCreamFighter {
       this.gameState.trainingCombo = 0;
       this.gameState.trainingActive = true;
       this.gameState.slotSpins = 0;
+      this.gameState.trainingPurchases = 0; // Reset purchases for new training session
 
       // Reset UI
       this.updateElement("training-score", "0");
@@ -992,6 +996,12 @@ class IceCreamFighter {
       const target = document.getElementById("training-target");
       if (target) {
         target.innerHTML = "";
+      }
+
+      // Hide continue button initially
+      const continueBtn = document.getElementById("continue-training");
+      if (continueBtn) {
+        continueBtn.style.display = "none";
       }
 
       this.playSound("trainingStart");
@@ -1038,6 +1048,8 @@ class IceCreamFighter {
         img.src = coneData.image;
         img.alt = "Training Cone";
         img.className = "cone-image";
+        // Make sure the image doesn't interfere with clicking
+        img.style.pointerEvents = "none";
         cone.appendChild(img);
       } else {
         cone.textContent = coneData.emoji;
@@ -1158,7 +1170,14 @@ class IceCreamFighter {
     }
 
     this.updateElement("final-score", this.gameState.trainingScore.toString());
+    this.updateTrainingButtonCosts(); // Update button costs based on purchases
     this.playSound("trainingComplete");
+
+    // Always show continue button after training ends
+    const continueBtn = document.getElementById("continue-training");
+    if (continueBtn) {
+      continueBtn.style.display = "block";
+    }
 
     if (this.gameState.trainingScore >= GAME_CONFIG.TRAINING_BONUS_THRESHOLD) {
       const bonusReward = document.getElementById("bonus-reward");
@@ -1166,6 +1185,54 @@ class IceCreamFighter {
         bonusReward.classList.add("available");
       }
     }
+  }
+
+  /**
+   * Update training button costs and availability
+   */
+  updateTrainingButtonCosts() {
+    const buttons = document.querySelectorAll("[data-training]");
+    buttons.forEach((btn) => {
+      const rewardType = btn.dataset.training;
+      const cost = this.getTrainingCost(rewardType);
+      const canAfford = this.gameState.trainingScore >= cost;
+
+      // Update button text to show cost
+      const reward = TRAINING_REWARDS[rewardType];
+      if (reward) {
+        if (rewardType === "health") {
+          // Special handling for bonus reward
+          const bonusReward = document.getElementById("bonus-reward");
+          if (
+            bonusReward &&
+            this.gameState.trainingScore >= GAME_CONFIG.TRAINING_BONUS_THRESHOLD
+          ) {
+            bonusReward.classList.add("available");
+            bonusReward.innerHTML = `
+              <img src="${reward.icon}" alt="Health Upgrade" class="upgrade-icon" />
+              ${reward.name} (${cost} pts)
+            `;
+            bonusReward.disabled = !canAfford;
+          }
+        } else {
+          btn.innerHTML = `
+            <img src="${reward.icon}" alt="${reward.name}" class="upgrade-icon" />
+            ${reward.name} (${cost} pts)
+          `;
+          btn.disabled = !canAfford;
+        }
+      }
+    });
+  }
+
+  /**
+   * Get cost for training reward based on purchases made
+   * @param {string} rewardType - Type of reward
+   * @returns {number} Cost in points
+   */
+  getTrainingCost(rewardType) {
+    const baseCost = 5;
+    return baseCost + this.gameState.trainingPurchases * 5;
   }
 
   /**
@@ -1179,22 +1246,42 @@ class IceCreamFighter {
       return;
     }
 
+    const cost = this.getTrainingCost(rewardType);
+
+    // Check if player has enough points
+    if (this.gameState.trainingScore < cost) {
+      this.updateElement(
+        "final-score",
+        `${this.gameState.trainingScore} (Need ${cost} points!)`
+      );
+      return;
+    }
+
     try {
+      // Deduct points and increment purchases
+      this.gameState.trainingScore -= cost;
+      this.gameState.trainingPurchases++;
+
+      // Apply the reward
       reward.apply(this.gameState.player);
-      this.addBattleLog(`Training complete! ${reward.name}!`);
+      this.addBattleLog(
+        `Training complete! ${reward.name}! (Cost: ${cost} points)`
+      );
       this.playSound("upgradeApply");
 
-      const trainingChoices = document.getElementById("training-choices");
-      if (trainingChoices) {
-        trainingChoices.classList.remove("active");
-      }
+      // Update UI
+      this.updateElement(
+        "final-score",
+        this.gameState.trainingScore.toString()
+      );
+      this.updateTrainingButtonCosts(); // Update costs for remaining purchases
+      this.updateSlotButtonState(); // Update slot button since score changed
 
-      const bonusReward = document.getElementById("bonus-reward");
-      if (bonusReward) {
-        bonusReward.classList.remove("available");
+      // Show continue button after first purchase
+      const continueBtn = document.getElementById("continue-training");
+      if (continueBtn) {
+        continueBtn.style.display = "block";
       }
-
-      this.updateSlotButtonState();
     } catch (error) {
       console.error("Failed to apply training reward:", error);
     }
@@ -1207,7 +1294,7 @@ class IceCreamFighter {
     const nextCost = 1 + this.gameState.slotSpins;
     const spinBtn = document.getElementById("spin-btn");
     if (spinBtn) {
-      spinBtn.disabled = this.gameState.player.sanity < nextCost;
+      spinBtn.disabled = this.gameState.trainingScore < nextCost;
     }
   }
 
@@ -1217,18 +1304,23 @@ class IceCreamFighter {
   spinSlots() {
     const cost = 1 + this.gameState.slotSpins;
 
-    if (this.gameState.player.sanity < cost) {
+    if (this.gameState.trainingScore < cost) {
       this.updateElement(
         "slot-result",
-        `<span style="color: #ff6b6b;">Not enough sanity! Need ${cost}</span>`
+        `<span style="color: #ff6b6b;">Not enough points! Need ${cost}</span>`
       );
       return;
     }
 
     try {
-      this.gameState.player.sanity -= cost;
+      this.gameState.trainingScore -= cost;
       this.gameState.slotSpins++;
 
+      // Update UI to show current score and next cost
+      this.updateElement(
+        "training-score",
+        this.gameState.trainingScore.toString()
+      );
       this.updateElement(
         "slot-cost",
         (1 + this.gameState.slotSpins).toString()

@@ -189,45 +189,47 @@
         <div id="training-choices">
           <h3>Choose your training reward:</h3>
           <p>Your score: <span id="final-score">0</span> points</p>
-          <button class="move-btn" data-training="attack">
-            <img
-              src="images/upgrade_attack.png"
-              alt="Attack Upgrade"
-              class="upgrade-icon"
-            />
-            +3 Attack Power
-          </button>
-          <button class="move-btn" data-training="defense">
-            <img
-              src="images/upgrade_defense.png"
-              alt="Defense Upgrade"
-              class="upgrade-icon"
-            />
-            +3 Defense Power
-          </button>
-          <button class="move-btn" data-training="sanity">
-            <img
-              src="images/upgrade_sanity.png"
-              alt="Sanity Upgrade"
-              class="upgrade-icon"
-            />
-            +1 Max Sanity
-          </button>
-          <button class="move-btn" id="bonus-reward" data-training="health">
-            <img
-              src="images/upgrade_health.png"
-              alt="Health Upgrade"
-              class="upgrade-icon"
-            />
-            +10 Max HP (Score 50+)
-          </button>
+          <div id="training-btns">
+            <button class="move-btn" data-training="attack">
+              <img
+                src="images/upgrade_attack.png"
+                alt="Attack Upgrade"
+                class="upgrade-icon"
+              />
+              <div class="btn-text">+3 Attack Power</div>
+            </button>
+            <button class="move-btn" data-training="defense">
+              <img
+                src="images/upgrade_defense.png"
+                alt="Defense Upgrade"
+                class="upgrade-icon"
+              />
+              <div class="btn-text">+3 Defense Power</div>
+            </button>
+            <button class="move-btn" data-training="sanity">
+              <img
+                src="images/upgrade_sanity.png"
+                alt="Sanity Upgrade"
+                class="upgrade-icon"
+              />
+              <div class="btn-text">+1 Max Sanity</div>
+            </button>
+            <button class="move-btn" id="bonus-reward" data-training="health">
+              <img
+                src="images/upgrade_health.png"
+                alt="Health Upgrade"
+                class="upgrade-icon"
+              />
+              <div class="btn-text">+10 Max HP (Score 50+)</div>
+            </button>
+          </div>
         </div>
 
         <div class="slot-machine">
           <h3>🎰 Risky Slots 🎰</h3>
           <p>
-            Risk sanity for rewards! (Cost:
-            <span id="slot-cost">1</span> Sanity)
+            Risk points for rewards! (Cost:
+            <span id="slot-cost">1</span> Points)
           </p>
           <div class="slot-reels">
             <div class="slot-reel" id="reel1">
@@ -254,10 +256,10 @@
           </div>
           <button class="move-btn" id="spin-btn">
             <img src="images/slot_spin_icon.png" alt="Spin" class="move-icon" />
-            Spin! (-<span id="spin-cost">1</span> Sanity)
+            Spin! (-<span id="spin-cost">1</span> Points)
           </button>
           <div id="slot-result" role="status" aria-live="polite"></div>
-          <p class="slot-warning">Cost increases by 1 each spin!</p>
+          <p class="slot-warning">Cost increases by 1 point each spin!</p>
         </div>
 
         <button class="continue-btn" id="continue-training">
