@@ -23,14 +23,14 @@ class Combat {
       });
     });
 
-    // Talk button
-    const talkBtn = document.getElementById("talk-btn");
-    if (talkBtn) {
-      talkBtn.addEventListener("click", () => {
-        this.game.playSound("buttonClick");
-        this.startTalk();
-      });
-    }
+    // // Talk button
+    // const talkBtn = document.getElementById("talk-btn");
+    // if (talkBtn) {
+    //   talkBtn.addEventListener("click", () => {
+    //     this.game.playSound("buttonClick");
+    //     this.startTalk();
+    //   });
+    // }
   }
 
   /**
@@ -95,13 +95,13 @@ class Combat {
           this.game.gameState.isMalfunctioning;
       });
 
-      const talkBtn = document.getElementById("talk-btn");
-      if (talkBtn) {
-        talkBtn.disabled =
-          !this.game.gameState.isPlayerTurn ||
-          this.game.gameState.player.sanity >=
-            this.game.gameState.player.maxSanity - 1;
-      }
+      //   const talkBtn = document.getElementById("talk-btn");
+      //   if (talkBtn) {
+      //     talkBtn.disabled =
+      //       !this.game.gameState.isPlayerTurn ||
+      //       this.game.gameState.player.sanity >=
+      //         this.game.gameState.player.maxSanity - 1;
+      //   }
 
       const dialoguePortrait = document.getElementById("dialogue-portrait");
       if (dialoguePortrait && this.game.gameState.player) {

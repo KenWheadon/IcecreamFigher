@@ -127,8 +127,10 @@
               alt="Light Attack"
               class="move-icon"
             />
-            <span class="move-name">Scoop Slam</span>
-            <div class="move-cost">Base Cost: 2 | Damage: 15</div>
+            <div class="attack-text">
+              <span class="move-name">Scoop Slam</span>
+              <div class="move-cost">Base Cost: 2 | Damage: 15</div>
+            </div>
             <div class="move-tooltip" id="tooltip-light"></div>
           </button>
           <button class="move-btn" data-move="heavy" id="btn-heavy">
@@ -137,27 +139,33 @@
               alt="Heavy Attack"
               class="move-icon"
             />
-            <span class="move-name">Sprinkle Blast</span>
-            <div class="move-cost">Base Cost: 5 | Damage: 35</div>
+            <div class="attack-text">
+              <span class="move-name">Sprinkle Blast</span>
+              <div class="move-cost">Base Cost: 5 | Damage: 35</div>
+            </div>
             <div class="move-tooltip" id="tooltip-heavy"></div>
           </button>
           <button class="move-btn" data-move="defend" id="btn-defend">
             <img src="images/defend_icon.png" alt="Defend" class="move-icon" />
-            <span class="move-name">Ice Shield</span>
-            <div class="move-cost">Base Cost: 1 | Block damage</div>
+            <div class="attack-text">
+              <span class="move-name">Ice Shield</span>
+              <div class="move-cost">Base Cost: 1 | Block damage</div>
+            </div>
             <div class="move-tooltip" id="tooltip-defend"></div>
           </button>
           <button class="move-btn" data-move="boost" id="btn-boost">
             <img src="images/boost_icon.png" alt="Boost" class="move-icon" />
-            <span class="move-name">Sugar Rush</span>
-            <div class="move-cost">Base Cost: 3 | +50% damage</div>
+            <div class="attack-text">
+              <span class="move-name">Sugar Rush</span>
+              <div class="move-cost">Base Cost: 3 | +50% damage</div>
+            </div>
             <div class="move-tooltip" id="tooltip-boost"></div>
           </button>
-          <button class="move-btn talk-btn" id="talk-btn">
+          <!-- <button class="move-btn talk-btn" id="talk-btn">
             <img src="images/talk_icon.png" alt="Talk" class="move-icon" />
             <span class="move-name">💬 Talk It Out</span>
             <div class="move-cost">Restore sanity through dialogue</div>
-          </button>
+          </button> -->
         </div>
 
         <div
@@ -174,13 +182,16 @@
         <p id="training-instructions">
           Click the ice cream cones for points! Higher = more points!
         </p>
-        <div class="training-combo">
+
+        <!-- Training Game Elements - Hidden by default -->
+        <div class="training-combo" id="training-combo">
           Combo: <span id="combo-counter">0</span>x
         </div>
-        <p>
+        <div class="training-score-time" id="training-score-time">
           Score: <span id="training-score">0</span> | Time:
           <span id="training-timer">15</span>s
-        </p>
+        </div>
+
         <div
           class="training-target"
           id="training-target"
@@ -263,7 +274,9 @@
                 alt="Spin"
                 class="move-icon"
               />
-              Spin! (-<span id="spin-cost">1</span> Points)
+              <div class="slot-btn-text">
+                Spin! (-<span id="spin-cost">1</span> Points)
+              </div>
             </button>
             <div id="slot-result" role="status" aria-live="polite"></div>
             <p class="slot-warning">Cost increases by 1 point each spin!</p>
@@ -272,32 +285,128 @@
             </p>
           </div>
 
-          <div class="slot-paytable">
+          <div class="slot-paytable" id="slot-paytable">
             <h4>🏆 Paytable</h4>
             <p class="paytable-note">3 matching symbols required:</p>
             <div class="paytable-grid">
               <div class="paytable-row">
-                <span class="symbol">🍦🍦🍦</span>
+                <div class="paytable-symbols">
+                  <img
+                    src="images/slot_vanilla.png"
+                    alt="Vanilla"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_vanilla.png"
+                    alt="Vanilla"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_vanilla.png"
+                    alt="Vanilla"
+                    class="paytable-symbol"
+                  />
+                </div>
                 <span class="reward">+2 Attack</span>
               </div>
               <div class="paytable-row">
-                <span class="symbol">🍫🍫🍫</span>
+                <div class="paytable-symbols">
+                  <img
+                    src="images/slot_chocolate.png"
+                    alt="Chocolate"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_chocolate.png"
+                    alt="Chocolate"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_chocolate.png"
+                    alt="Chocolate"
+                    class="paytable-symbol"
+                  />
+                </div>
                 <span class="reward">+2 Defense</span>
               </div>
               <div class="paytable-row">
-                <span class="symbol">🍓🍓🍓</span>
+                <div class="paytable-symbols">
+                  <img
+                    src="images/slot_strawberry.png"
+                    alt="Strawberry"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_strawberry.png"
+                    alt="Strawberry"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_strawberry.png"
+                    alt="Strawberry"
+                    class="paytable-symbol"
+                  />
+                </div>
                 <span class="reward">+15 HP</span>
               </div>
               <div class="paytable-row">
-                <span class="symbol">🍨🍨🍨</span>
+                <div class="paytable-symbols">
+                  <img
+                    src="images/slot_soft.png"
+                    alt="Soft Serve"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_soft.png"
+                    alt="Soft Serve"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_soft.png"
+                    alt="Soft Serve"
+                    class="paytable-symbol"
+                  />
+                </div>
                 <span class="reward">+2 Max Sanity</span>
               </div>
               <div class="paytable-row">
-                <span class="symbol">🧊🧊🧊</span>
+                <div class="paytable-symbols">
+                  <img
+                    src="images/slot_ice.png"
+                    alt="Ice"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_ice.png"
+                    alt="Ice"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_ice.png"
+                    alt="Ice"
+                    class="paytable-symbol"
+                  />
+                </div>
                 <span class="reward">+1 All Stats & +10 HP</span>
               </div>
               <div class="paytable-row jackpot">
-                <span class="symbol">🪙🪙🪙</span>
+                <div class="paytable-symbols">
+                  <img
+                    src="images/slot_coin.png"
+                    alt="Coin"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_coin.png"
+                    alt="Coin"
+                    class="paytable-symbol"
+                  />
+                  <img
+                    src="images/slot_coin.png"
+                    alt="Coin"
+                    class="paytable-symbol"
+                  />
+                </div>
                 <span class="reward">+15 Training Points</span>
               </div>
             </div>

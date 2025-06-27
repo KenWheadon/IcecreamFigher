@@ -109,6 +109,7 @@ h3 {
   flex: 1;
   min-width: 200px;
   max-width: 250px;
+  justify-items: center;
 }
 
 .fighter-option:hover {
@@ -121,6 +122,14 @@ h3 {
   outline-offset: 2px;
 }
 
+/* Fighter Images */
+.fighter-image {
+  width: 85%;
+  height: 85%;
+  object-fit: contain;
+  margin: 10px 0;
+}
+
 /* Battle Arena */
 .battle-arena {
   display: flex;
@@ -128,6 +137,10 @@ h3 {
   margin: 30px 0;
   gap: 50px;
   flex-wrap: wrap;
+}
+
+.battle-arena .fighter-image {
+  height: 261px;
 }
 
 .fighter-card {
@@ -314,6 +327,20 @@ h3 {
   position: relative;
   text-align: center;
   min-width: 20%;
+  max-height: 200px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+#battle-screen .move-btn .move-icon {
+  width: 60%;
+  height: 90%;
+}
+
+#battle-screen .move-btn .attack-text {
+  width: 30%;
 }
 
 .move-btn:hover:not(:disabled) {
@@ -332,9 +359,21 @@ h3 {
   transform: none;
 }
 
-.talk-btn {
-  grid-column: 1 / -1;
-  background: var(--talk-gradient);
+.slot-machine-container .move-btn img {
+  height: 80%;
+  width: 40%;
+}
+
+.slot-btn-text {
+  width: 55%;
+}
+
+#spin-btn {
+  width: 100%;
+}
+
+#training-instructions {
+  text-align: center;
 }
 
 .move-name {
@@ -346,6 +385,23 @@ h3 {
 .move-cost {
   font-size: var(--font-size-small);
   opacity: 0.8;
+}
+
+/* Move Icons */
+.move-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.upgrade-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  margin-right: 8px;
+  vertical-align: middle;
 }
 
 /* Tooltips */
@@ -405,6 +461,21 @@ h3 {
   color: #48dbfb;
   margin: 10px 0;
   text-align: center;
+  display: none; /* Hidden by default */
+}
+
+.training-combo.active {
+  display: block;
+}
+
+.training-score-time {
+  text-align: center;
+  margin: 10px 0;
+  display: none; /* Hidden by default */
+}
+
+.training-score-time.active {
+  display: block;
 }
 
 .training-target {
@@ -441,8 +512,8 @@ h3 {
 }
 
 .cone-image {
-  width: 100%;
-  height: auto;
+  width: 50px;
+  height: 50px;
   object-fit: contain;
   pointer-events: none;
 }
@@ -534,6 +605,18 @@ h3 {
   border-radius: var(--border-radius-small);
   min-width: 60px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Slot Symbol Scaling */
+.slot-symbol {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .spinning {
@@ -566,6 +649,11 @@ h3 {
   flex: 1;
   min-width: 280px;
   max-width: 350px;
+  display: none; /* Hidden by default */
+}
+
+.slot-paytable.active {
+  display: block;
 }
 
 .slot-paytable h4 {
@@ -612,9 +700,16 @@ h3 {
   border: 1px solid rgba(253, 203, 110, 0.3);
 }
 
-.paytable-row .symbol {
-  font-size: var(--font-size-medium);
-  font-weight: bold;
+.paytable-symbols {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.paytable-symbol {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .paytable-row .reward {
@@ -677,6 +772,14 @@ h3 {
   display: block;
 }
 
+.dialogue-portrait {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin: 10px auto;
+  display: block;
+}
+
 #fighter-statement {
   font-style: italic;
   text-align: center;
@@ -719,10 +822,26 @@ h3 {
   font-size: var(--font-size-large);
 }
 
+.malfunction-image {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  margin: 20px auto;
+  display: block;
+}
+
 .final-score {
   font-size: var(--font-size-xlarge);
   margin: 20px 0;
   text-align: center;
+}
+
+.screen-image {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  margin: 20px auto;
+  display: block;
 }
 
 /* End Screens */
@@ -816,10 +935,6 @@ h3 {
 
   .paytable-row {
     padding: 6px 8px;
-  }
-
-  .paytable-row .symbol {
-    font-size: var(--font-size-small);
   }
 
   .paytable-row .reward {

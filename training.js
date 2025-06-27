@@ -74,6 +74,12 @@ class Training {
       this.game.updateElement("slot-cost", "1");
       this.game.updateElement("spin-cost", "1");
 
+      // Show training game elements
+      const trainingCombo = document.getElementById("training-combo");
+      const trainingScoreTime = document.getElementById("training-score-time");
+      if (trainingCombo) trainingCombo.classList.add("active");
+      if (trainingScoreTime) trainingScoreTime.classList.add("active");
+
       // Hide training choices and slot machine initially
       const trainingChoices = document.getElementById("training-choices");
       if (trainingChoices) {
@@ -83,6 +89,12 @@ class Training {
       const slotMachine = document.getElementById("slot-machine");
       if (slotMachine) {
         slotMachine.style.display = "none";
+      }
+
+      // Hide paytable initially
+      const slotPaytable = document.getElementById("slot-paytable");
+      if (slotPaytable) {
+        slotPaytable.classList.remove("active");
       }
 
       const bonusReward = document.getElementById("bonus-reward");
@@ -274,12 +286,18 @@ class Training {
       this.game.timers.training = null;
     }
 
-    // Hide the mini-game
+    // Hide the mini-game elements
     const target = document.getElementById("training-target");
     if (target) {
       target.innerHTML = "";
       target.style.display = "none";
     }
+
+    // Hide training game UI elements
+    const trainingCombo = document.getElementById("training-combo");
+    const trainingScoreTime = document.getElementById("training-score-time");
+    if (trainingCombo) trainingCombo.classList.remove("active");
+    if (trainingScoreTime) trainingScoreTime.classList.remove("active");
 
     // Show training rewards and slot machine
     const trainingChoices = document.getElementById("training-choices");
@@ -290,6 +308,12 @@ class Training {
     const slotMachine = document.getElementById("slot-machine");
     if (slotMachine) {
       slotMachine.style.display = "block";
+    }
+
+    // Show paytable when slot machine is shown
+    const slotPaytable = document.getElementById("slot-paytable");
+    if (slotPaytable) {
+      slotPaytable.classList.add("active");
     }
 
     // Show final score and update UI
@@ -341,14 +365,14 @@ class Training {
             bonusReward.classList.add("available");
             bonusReward.innerHTML = `
               <img src="${reward.icon}" alt="Health Upgrade" class="upgrade-icon" />
-              ${reward.name} (${cost} pts)
+              <div class="btn-text">${reward.name} (${cost} pts)</div>
             `;
             bonusReward.disabled = !canAfford;
           }
         } else {
           btn.innerHTML = `
             <img src="${reward.icon}" alt="${reward.name}" class="upgrade-icon" />
-            ${reward.name} (${cost} pts)
+            <div class="btn-text">${reward.name} (${cost} pts)</div>
           `;
           btn.disabled = !canAfford;
         }
