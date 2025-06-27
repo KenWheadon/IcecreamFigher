@@ -314,7 +314,6 @@ h3 {
   position: relative;
   text-align: center;
   min-width: 20%;
-  max-width: 42%;
 }
 
 .move-btn:hover:not(:disabled) {
