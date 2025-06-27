@@ -313,7 +313,7 @@ const SLOT_CONFIG = {
 // Training rewards with image references
 const TRAINING_REWARDS = {
   attack: {
-    name: "+3 Attack Power",
+    name: "+3 Attack",
     description: "Increase your attack power",
     icon: "images/upgrade_attack.png",
     apply: (player) => {
@@ -321,7 +321,7 @@ const TRAINING_REWARDS = {
     },
   },
   defense: {
-    name: "+3 Defense Power",
+    name: "+3 Defense",
     description: "Increase your defense power",
     icon: "images/upgrade_defense.png",
     apply: (player) => {
@@ -338,7 +338,7 @@ const TRAINING_REWARDS = {
     },
   },
   health: {
-    name: "+10 Max HP (Score 50+)",
+    name: "+10 Max HP",
     description: "Increase your maximum health",
     icon: "images/upgrade_health.png",
     apply: (player) => {
