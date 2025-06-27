@@ -1042,3 +1042,214 @@ h3 {
   flex-wrap: wrap;
   align-content: space-between;
 }
+
+/* CSS Custom Properties */
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --talk-gradient: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
+  --hp-gradient: linear-gradient(90deg, #ff6b6b, #ee5a24);
+  --sanity-gradient: linear-gradient(90deg, #48dbfb, #0abde3);
+
+  --background-overlay: rgba(0, 0, 0, 0.3);
+  --card-background: rgba(255, 255, 255, 0.2);
+  --card-background-hover: rgba(255, 255, 255, 0.3);
+
+  --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  --border-radius: 15px;
+  --border-radius-large: 20px;
+  --border-radius-small: 10px;
+
+  --transition-fast: 0.1s;
+  --transition-normal: 0.3s;
+  --transition-slow: 0.8s;
+
+  --font-family: "Comic Sans MS", cursive, sans-serif;
+  --font-size-small: 12px;
+  --font-size-normal: 14px;
+  --font-size-medium: 16px;
+  --font-size-large: 18px;
+  --font-size-xlarge: 24px;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--primary-gradient);
+  color: white;
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Achievement System Styles */
+.achievement-drawer {
+  position: fixed;
+  top: -400px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 94%;
+  height: 345px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.95),
+    rgba(50, 50, 50, 0.95)
+  );
+  backdrop-filter: blur(10px);
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  transition: top 0.5s ease;
+  z-index: 1000;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.achievement-drawer.open {
+  top: 0;
+}
+
+.achievement-header {
+  padding: 15px 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(
+    90deg,
+    rgba(102, 126, 234, 0.3),
+    rgba(118, 75, 162, 0.3)
+  );
+}
+
+.achievement-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.achievement-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+  font-family: var(--font-family);
+}
+
+.achievement-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.achievement-grid {
+  padding: 20px;
+  padding-top: 36px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 15px;
+  max-height: 260px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.achievement-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid transparent;
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+}
+
+.achievement-item.unlocked {
+  background: linear-gradient(
+    135deg,
+    rgba(72, 219, 251, 0.3),
+    rgba(10, 189, 227, 0.3)
+  );
+  border-color: rgba(72, 219, 251, 0.5);
+  box-shadow: 0 0 15px rgba(72, 219, 251, 0.3);
+}
+
+.achievement-item.locked {
+  opacity: 0.4;
+  filter: grayscale(80%);
+}
+
+.achievement-item:hover {
+  transform: scale(1.05);
+}
+
+.achievement-icon {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+.achievement-name {
+  font-size: 10px;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+}
+
+.achievement-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 10;
+  margin-bottom: 5px;
+}
+
+.achievement-item:hover .achievement-tooltip {
+  opacity: 1;
+}
+
+.achievement-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--secondary-gradient);
+  border: none;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s;
+  z-index: 999;
+  font-family: var(--font-family);
+}
+
+.achievement-toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}

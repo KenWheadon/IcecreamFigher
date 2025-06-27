@@ -1,4 +1,4 @@
-// Fighter Selection Module
+// Enhanced Fighter Selection Module
 class FighterSelection {
   constructor(game) {
     this.game = game;
@@ -33,7 +33,19 @@ class FighterSelection {
     }
 
     try {
+      // Store selected fighter type for achievements
+      this.game.gameState.selectedFighterType = fighterType;
+
+      // Create player from template
       this.game.gameState.player = { ...FIGHTER_TEMPLATES[fighterType] };
+
+      // Update UI elements to show selected fighter
+      this.updatePlayerVisuals(fighterType);
+
+      // Update move names for the selected fighter
+      this.game.updateFighterMoveNames();
+
+      // Show battle screen and start
       this.game.showScreen("battle-screen");
       this.game.playMusic("battle");
 
@@ -44,6 +56,31 @@ class FighterSelection {
     } catch (error) {
       console.error("Failed to select fighter:", error);
       this.game.showError("Failed to select fighter");
+    }
+  }
+
+  /**
+   * Update player visual elements with selected fighter
+   */
+  updatePlayerVisuals(fighterType) {
+    const fighter = FIGHTER_TEMPLATES[fighterType];
+
+    // Update player name
+    const playerName = document.getElementById("player-name");
+    if (playerName) {
+      playerName.textContent = fighter.name;
+    }
+
+    // Update player emoji in battle screen
+    const playerEmoji = document.getElementById("player-emoji");
+    if (playerEmoji) {
+      playerEmoji.textContent = fighter.sprite;
+    }
+
+    // Update dialogue portrait
+    const dialoguePortrait = document.getElementById("dialogue-portrait");
+    if (dialoguePortrait) {
+      dialoguePortrait.textContent = fighter.sprite;
     }
   }
 }

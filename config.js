@@ -1,129 +1,185 @@
-// Game Configuration and Constants
+// Enhanced Game Configuration and Constants
 const GAME_CONFIG = {
   TOTAL_BATTLES: 5,
-  TRAINING_TIME: 15,
+  TRAINING_TIME: 20, // Increased from 15 for better scoring
   ANIMATION_DURATION: 1000,
   ENEMY_MOVE_DELAY: 1000,
   DAMAGE_NUMBER_DURATION: 1000,
-  TRAINING_SPAWN_BASE_DELAY: 1500,
-  TRAINING_SPAWN_MIN_DELAY: 500,
-  TRAINING_CONE_LIFETIME: 3000,
+  TRAINING_SPAWN_BASE_DELAY: 600, // Reduced for more frequent spawns
+  TRAINING_SPAWN_MIN_DELAY: 200, // Much faster minimum spawn
+  TRAINING_BUBBLE_LIFETIME: 4000, // Increased bubble lifetime
   SLOT_SPIN_DURATION: 100,
   SLOT_SPIN_COUNT_BASE: 10,
-  BOOST_MULTIPLIER: 1.6,
+  BOOST_MULTIPLIER: 1.5, // Slightly reduced for balance
   SANITY_RECOVERY_PER_TURN: 1,
-  SANITY_RECOVERY_BETWEEN_BATTLES: 2,
+  SANITY_RECOVERY_BETWEEN_BATTLES: 3, // Increased recovery
   MALFUNCTION_SANITY_RECOVERY: 0.5,
-  TRAINING_BONUS_THRESHOLD: 50,
-  MAX_COMBO_MULTIPLIER: 5,
+  TRAINING_BONUS_THRESHOLD: 200, // Reduced threshold for bonus reward
+  MAX_COMBO_MULTIPLIER: 10, // Increased max combo
+  MAX_SIMULTANEOUS_BUBBLES: 6, // New: max bubbles on screen at once
+  BUBBLE_BASE_POINTS: [1, 2, 3, 5, 8], // Points for different bubble sizes/types
 };
 
-// Fighter Templates with image references
+// Fighter Templates with themed abilities and better balance
 const FIGHTER_TEMPLATES = {
   vanilla: {
     name: "Vanilla",
     sprite: "🍦",
-    image: "images/vanilla_fighter.png",
     hp: 100,
     maxHp: 100,
     attack: 15,
     defense: 10,
     sanity: 12,
     maxSanity: 12,
+    moves: {
+      light: {
+        name: "Scoop Slam",
+        icon: "🥄",
+        description: "A classic vanilla strike",
+      },
+      heavy: {
+        name: "Sprinkle Blast",
+        icon: "✨",
+        description: "Overwhelm with sprinkles",
+      },
+      defend: {
+        name: "Ice Shield",
+        icon: "🧊",
+        description: "Freeze solid for protection",
+      },
+      boost: {
+        name: "Sugar Rush",
+        icon: "🍬",
+        description: "Pure vanilla energy boost",
+      },
+    },
   },
   chocolate: {
     name: "Chocolate",
     sprite: "🍫",
-    image: "images/chocolate_fighter.png",
     hp: 90,
     maxHp: 90,
-    attack: 20,
+    attack: 22, // Higher attack for glass cannon
     defense: 8,
     sanity: 10,
     maxSanity: 10,
+    moves: {
+      light: {
+        name: "Cocoa Strike",
+        icon: "🍫",
+        description: "Quick chocolate chop",
+      },
+      heavy: {
+        name: "Dark Eruption",
+        icon: "🌋",
+        description: "Explosive cocoa power",
+      },
+      defend: {
+        name: "Bitter Block",
+        icon: "🛡️",
+        description: "Bitter chocolate armor",
+      },
+      boost: {
+        name: "Mocha Fury",
+        icon: "☕",
+        description: "Caffeine-powered rage",
+      },
+    },
   },
   strawberry: {
     name: "Strawberry",
     sprite: "🍓",
-    image: "images/strawberry_fighter.png",
-    hp: 110,
-    maxHp: 110,
+    hp: 120, // Higher HP for tank
+    maxHp: 120,
     attack: 12,
-    defense: 15,
+    defense: 18, // Higher defense
     sanity: 14,
     maxSanity: 14,
+    moves: {
+      light: { name: "Berry Bonk", icon: "🍓", description: "Sweet berry tap" },
+      heavy: {
+        name: "Jam Explosion",
+        icon: "💥",
+        description: "Sticky strawberry blast",
+      },
+      defend: {
+        name: "Sweet Barrier",
+        icon: "🌸",
+        description: "Protective fruit shield",
+      },
+      boost: {
+        name: "Berry Blitz",
+        icon: "⚡",
+        description: "Natural sugar rush",
+      },
+    },
   },
 };
 
-// Enemy Templates with different attack patterns and image references
+// Rebalanced Enemy Templates for proper difficulty curve
 const ENEMY_TEMPLATES = [
   {
     name: "Melty Mike",
     sprite: "🌊",
-    image: "images/enemy_1.png",
-    hp: 60,
-    maxHp: 60,
-    attack: 12,
-    defense: 5,
-    sanity: 8,
-    maxSanity: 8,
+    hp: 80, // Increased for balance
+    maxHp: 80,
+    attack: 14, // Slightly increased
+    defense: 6, // Slightly increased
+    sanity: 10, // Increased
+    maxSanity: 10,
     pattern: ["light", "light", "defend", "heavy"],
   },
   {
     name: "Freezer Burn Fred",
     sprite: "❄️",
-    image: "images/enemy_2.png",
-    hp: 80,
-    maxHp: 80,
-    attack: 15,
-    defense: 8,
-    sanity: 10,
-    maxSanity: 10,
+    hp: 110, // Increased
+    maxHp: 110,
+    attack: 18, // Increased
+    defense: 12, // Increased
+    sanity: 14, // Increased
+    maxSanity: 14,
     pattern: ["heavy", "defend", "light", "defend", "boost"],
   },
   {
     name: "Sour Sam",
     sprite: "🍋",
-    image: "images/enemy_3.png",
-    hp: 90,
-    maxHp: 90,
-    attack: 18,
-    defense: 10,
-    sanity: 12,
-    maxSanity: 12,
+    hp: 140, // Increased
+    maxHp: 140,
+    attack: 22, // Increased
+    defense: 15, // Increased
+    sanity: 18, // Increased
+    maxSanity: 18,
     pattern: ["boost", "heavy", "light", "light", "defend"],
   },
   {
     name: "Rocky Road Roger",
     sprite: "🗿",
-    image: "images/enemy_4.png",
-    hp: 110,
-    maxHp: 110,
-    attack: 20,
-    defense: 12,
-    sanity: 15,
-    maxSanity: 15,
+    hp: 180, // Increased
+    maxHp: 180,
+    attack: 26, // Increased
+    defense: 20, // Increased
+    sanity: 22, // Increased
+    maxSanity: 22,
     pattern: ["defend", "boost", "heavy", "defend", "light", "defend"],
   },
   {
     name: "Brain Freeze Boss",
     sprite: "🧠",
-    image: "images/enemy_5.png",
-    hp: 130,
-    maxHp: 130,
-    attack: 22,
-    defense: 15,
-    sanity: 20,
-    maxSanity: 20,
+    hp: 250, // Significantly increased for final boss
+    maxHp: 250,
+    attack: 32, // Increased
+    defense: 25, // Increased
+    sanity: 30, // Increased
+    maxSanity: 30,
     pattern: ["light", "boost", "heavy", "heavy", "defend", "light", "boost"],
   },
 ];
 
-// Move definitions with dynamic sanity costs and audio references
+// Enhanced Move definitions with better balance
 const MOVE_DEFINITIONS = {
   light: {
-    name: "Scoop Slam",
-    damage: 20,
+    name: "Quick Strike",
+    damage: 25, // Increased base damage
     baseCost: 2,
     description: "Reliable damage, predictable cost",
     sanityCosts: {
@@ -132,12 +188,10 @@ const MOVE_DEFINITIONS = {
       vsDefend: 1,
       vsBoost: 2,
     },
-    sound: "audio/attack_light.mp3",
-    icon: "images/attack_light_icon.png",
   },
   heavy: {
-    name: "Sprinkle Blast",
-    damage: 40,
+    name: "Power Blast",
+    damage: 50, // Increased base damage
     baseCost: 4,
     description: "Big damage, risky if countered",
     sanityCosts: {
@@ -146,11 +200,9 @@ const MOVE_DEFINITIONS = {
       vsDefend: 6,
       vsBoost: 0,
     },
-    sound: "audio/attack_heavy.mp3",
-    icon: "images/attack_heavy_icon.png",
   },
   defend: {
-    name: "Ice Shield",
+    name: "Shield",
     damage: 0,
     baseCost: 1,
     description: "FREE if they attack, costly if not",
@@ -160,22 +212,18 @@ const MOVE_DEFINITIONS = {
       vsDefend: 2,
       vsBoost: 3,
     },
-    sound: "audio/defend.mp3",
-    icon: "images/defend_icon.png",
   },
   boost: {
-    name: "Sugar Rush",
+    name: "Power Up",
     damage: 0,
     baseCost: 3,
-    description: "+60% damage next turn",
+    description: "+50% damage next turn",
     sanityCosts: {
       vsLight: 3,
       vsHeavy: 5,
       vsDefend: 1,
       vsBoost: 1,
     },
-    sound: "audio/boost.mp3",
-    icon: "images/boost_icon.png",
   },
 };
 
@@ -239,118 +287,271 @@ const TALKDOWN_OPTIONS = [
   { text: "Think of all the happy customers you've served!", success: true },
 ];
 
-// Training cone images and data
-const TRAINING_CONES = [
-  { emoji: "🍦", image: "images/cone_vanilla.png" },
-  { emoji: "🍨", image: "images/cone_soft.png" },
-  { emoji: "🍧", image: "images/cone_shaved.png" },
-];
-
-// Enhanced Slot machine configuration with MUCH higher win rates (targeting ~75%)
+// Enhanced Slot machine configuration with better rewards
 const SLOT_CONFIG = {
   symbols: [
-    { emoji: "🍦", image: "images/slot_vanilla.png", name: "vanilla" },
-    { emoji: "🍫", image: "images/slot_chocolate.png", name: "chocolate" },
-    { emoji: "🍓", image: "images/slot_strawberry.png", name: "strawberry" },
-    { emoji: "🍨", image: "images/slot_soft.png", name: "soft" },
-    { emoji: "🧊", image: "images/slot_ice.png", name: "ice" },
-    { emoji: "🪙", image: "images/slot_coin.png", name: "coin" },
+    { emoji: "🍦", name: "vanilla" },
+    { emoji: "🍫", name: "chocolate" },
+    { emoji: "🍓", name: "strawberry" },
+    { emoji: "🍨", name: "soft" },
+    { emoji: "🧊", name: "ice" },
+    { emoji: "🪙", name: "coin" },
   ],
-  // Adjusted weights to give approximately 75% win rate
-  // With 6 symbols, to get ~75% win rate for triple matches, we need heavily weighted distribution
-  weights: [90, 70, 50, 30, 10, 5], // This should give roughly 75% win chance
+  // Adjusted weights for better win rate (~65%)
+  weights: [120, 100, 80, 60, 20, 10],
   rewards: {
     triple: {
-      vanilla: {
-        name: "VANILLA VICTORY!",
-        attack: 2,
-        color: "#f5e6d3",
-      },
-      chocolate: {
-        name: "CHOCOLATE CHAMPION!",
-        defense: 2,
-        color: "#8b4513",
-      },
-      strawberry: {
-        name: "STRAWBERRY SUPREME!",
-        hp: 15,
-        color: "#ff6b6b",
-      },
-      soft: {
-        name: "SOFT SERVE SUCCESS!",
-        sanity: 2,
-        color: "#ffeaa7",
-      },
+      vanilla: { name: "VANILLA VICTORY!", attack: 3, color: "#f5e6d3" },
+      chocolate: { name: "CHOCOLATE CHAMPION!", defense: 3, color: "#8b4513" },
+      strawberry: { name: "STRAWBERRY SUPREME!", hp: 25, color: "#ff6b6b" },
+      soft: { name: "SOFT SERVE SUCCESS!", sanity: 3, color: "#ffeaa7" },
       ice: {
         name: "ICE COLD JACKPOT!",
-        attack: 1,
-        defense: 1,
-        sanity: 1,
-        hp: 10,
+        attack: 2,
+        defense: 2,
+        sanity: 2,
+        hp: 20,
         color: "#48dbfb",
       },
-      coin: {
-        name: "COIN JACKPOT!",
-        points: 15,
-        color: "#fdcb6e",
-      },
+      coin: { name: "COIN JACKPOT!", points: 50, color: "#fdcb6e" },
     },
-  },
-  // Paytable for display
-  paytable: [
-    { symbol: "🍦", name: "Vanilla", reward: "+2 Attack" },
-    { symbol: "🍫", name: "Chocolate", reward: "+2 Defense" },
-    { symbol: "🍓", name: "Strawberry", reward: "+15 HP" },
-    { symbol: "🍨", name: "Soft Serve", reward: "+2 Max Sanity" },
-    { symbol: "🧊", name: "Ice", reward: "+1 All Stats & +10 HP" },
-    { symbol: "🪙", name: "Coin", reward: "+15 Training Points" },
-  ],
-  sounds: {
-    spin: "audio/slot_spin.mp3",
-    win: "audio/slot_win.mp3",
-    jackpot: "audio/slot_jackpot.mp3",
   },
 };
 
-// Training rewards with image references
+// Enhanced training rewards with better balance
 const TRAINING_REWARDS = {
   attack: {
-    name: "+3 Attack",
-    description: "Increase your attack power",
-    icon: "images/upgrade_attack.png",
+    name: "+5 Attack",
+    description: "Increase your attack power significantly",
+    icon: "⚔️",
     apply: (player) => {
-      player.attack += 3;
+      player.attack += 5; // Increased from 3
     },
   },
   defense: {
-    name: "+3 Defense",
-    description: "Increase your defense power",
-    icon: "images/upgrade_defense.png",
+    name: "+5 Defense",
+    description: "Increase your defense power significantly",
+    icon: "🛡️",
     apply: (player) => {
-      player.defense += 3;
+      player.defense += 5; // Increased from 3
     },
   },
   sanity: {
-    name: "+1 Max Sanity",
+    name: "+2 Max Sanity",
     description: "Increase your maximum sanity",
-    icon: "images/upgrade_sanity.png",
+    icon: "🧠",
     apply: (player) => {
-      player.maxSanity += 1;
-      player.sanity = Math.min(player.sanity + 1, player.maxSanity);
+      player.maxSanity += 2; // Increased from 1
+      player.sanity = Math.min(player.sanity + 2, player.maxSanity);
     },
   },
   health: {
-    name: "+10 Max HP",
-    description: "Increase your maximum health",
-    icon: "images/upgrade_health.png",
+    name: "+25 Max HP",
+    description: "Increase your maximum health significantly",
+    icon: "❤️",
     apply: (player) => {
-      player.maxHp += 10;
-      player.hp = Math.min(player.hp + 10, player.maxHp);
+      player.maxHp += 25; // Increased from 10
+      player.hp = Math.min(player.hp + 25, player.maxHp);
     },
   },
 };
 
-// Audio configuration
+// Enhanced Bubble Types for training mini-game
+const BUBBLE_TYPES = [
+  {
+    type: "vanilla",
+    emoji: "🍦",
+    basePoints: 1,
+    size: "small",
+    color: "rgba(255,248,220,0.8)",
+    weight: 40, // Most common
+  },
+  {
+    type: "chocolate",
+    emoji: "🍫",
+    basePoints: 2,
+    size: "medium",
+    color: "rgba(139,69,19,0.8)",
+    weight: 30,
+  },
+  {
+    type: "strawberry",
+    emoji: "🍓",
+    basePoints: 3,
+    size: "medium",
+    color: "rgba(255,105,180,0.8)",
+    weight: 20,
+  },
+  {
+    type: "special",
+    emoji: "🌟",
+    basePoints: 5,
+    size: "large",
+    color: "rgba(255,215,0,0.8)",
+    weight: 8, // Rare
+  },
+  {
+    type: "bonus",
+    emoji: "💎",
+    basePoints: 10,
+    size: "large",
+    color: "rgba(72,219,251,0.8)",
+    weight: 2, // Very rare
+  },
+];
+
+// Achievement system configuration
+const ACHIEVEMENTS = {
+  // Enemy defeat achievements
+  enemy_1: {
+    icon: "🌊",
+    name: "Wave Rider",
+    description: "Defeat Melty Mike",
+    unlocked: false,
+  },
+  enemy_2: {
+    icon: "❄️",
+    name: "Ice Breaker",
+    description: "Defeat Freezer Burn Fred",
+    unlocked: false,
+  },
+  enemy_3: {
+    icon: "🍋",
+    name: "Sour Power",
+    description: "Defeat Sour Sam",
+    unlocked: false,
+  },
+  enemy_4: {
+    icon: "🗿",
+    name: "Rock Crusher",
+    description: "Defeat Rocky Road Roger",
+    unlocked: false,
+  },
+  enemy_5: {
+    icon: "🧠",
+    name: "Mind Over Matter",
+    description: "Defeat Brain Freeze Boss",
+    unlocked: false,
+  },
+
+  // Character victory achievements
+  vanilla_victory: {
+    icon: "🍦",
+    name: "Vanilla Champion",
+    description: "Beat the game with Vanilla",
+    unlocked: false,
+  },
+  chocolate_victory: {
+    icon: "🍫",
+    name: "Chocolate Champion",
+    description: "Beat the game with Chocolate",
+    unlocked: false,
+  },
+  strawberry_victory: {
+    icon: "🍓",
+    name: "Strawberry Champion",
+    description: "Beat the game with Strawberry",
+    unlocked: false,
+  },
+
+  // Stat milestone achievements
+  attack_100: {
+    icon: "⚔️",
+    name: "Power House",
+    description: "Train Attack above 100",
+    unlocked: false,
+  },
+  defense_100: {
+    icon: "🛡️",
+    name: "Immovable",
+    description: "Train Defense above 100",
+    unlocked: false,
+  },
+  sanity_100: {
+    icon: "🧠",
+    name: "Zen Master",
+    description: "Train Sanity above 100",
+    unlocked: false,
+  },
+  hp_300: {
+    icon: "❤️",
+    name: "Tank Mode",
+    description: "Train HP above 300",
+    unlocked: false,
+  },
+
+  // Focused training achievements
+  attack_only: {
+    icon: "🎯",
+    name: "Attack Focus",
+    description: "Only train Attack in a session",
+    unlocked: false,
+  },
+  defense_only: {
+    icon: "🎯",
+    name: "Defense Focus",
+    description: "Only train Defense in a session",
+    unlocked: false,
+  },
+  sanity_only: {
+    icon: "🎯",
+    name: "Sanity Focus",
+    description: "Only train Sanity in a session",
+    unlocked: false,
+  },
+  health_only: {
+    icon: "🎯",
+    name: "Health Focus",
+    description: "Only train Health in a session",
+    unlocked: false,
+  },
+
+  // Slot machine achievements
+  slot_vanilla: {
+    icon: "🍦",
+    name: "Vanilla Slots",
+    description: "Win Vanilla jackpot",
+    unlocked: false,
+  },
+  slot_chocolate: {
+    icon: "🍫",
+    name: "Chocolate Slots",
+    description: "Win Chocolate jackpot",
+    unlocked: false,
+  },
+  slot_strawberry: {
+    icon: "🍓",
+    name: "Strawberry Slots",
+    description: "Win Strawberry jackpot",
+    unlocked: false,
+  },
+  slot_soft: {
+    icon: "🍨",
+    name: "Soft Serve Slots",
+    description: "Win Soft Serve jackpot",
+    unlocked: false,
+  },
+  slot_ice: {
+    icon: "🧊",
+    name: "Ice Slots",
+    description: "Win Ice jackpot",
+    unlocked: false,
+  },
+  slot_coin: {
+    icon: "🪙",
+    name: "Coin Slots",
+    description: "Win Coin jackpot",
+    unlocked: false,
+  },
+  slot_unlucky: {
+    icon: "💸",
+    name: "Unlucky Streak",
+    description: "Lose 3 slot spins in a row",
+    unlocked: false,
+  },
+};
+
+// Audio configuration (keeping original)
 const AUDIO_CONFIG = {
   music: {
     menu: "audio/music_menu.mp3",
@@ -375,7 +576,7 @@ const AUDIO_CONFIG = {
     dealDamage: "audio/deal_damage.mp3",
     heal: "audio/heal.mp3",
 
-    // Move sounds (mapping the move types to actual sound files)
+    // Move sounds
     light: "audio/attack_light.mp3",
     heavy: "audio/attack_heavy.mp3",
     defend: "audio/defend.mp3",
@@ -392,7 +593,7 @@ const AUDIO_CONFIG = {
 
     // Training
     trainingStart: "audio/training_start.mp3",
-    coneClick: "audio/cone_click.mp3",
+    bubbleClick: "audio/cone_click.mp3", // Renamed from coneClick
     comboIncrease: "audio/combo_increase.mp3",
     trainingComplete: "audio/training_complete.mp3",
 
@@ -407,10 +608,13 @@ const AUDIO_CONFIG = {
     // Game End
     gameOverSound: "audio/game_over_sound.mp3",
     victorySound: "audio/victory_sound.mp3",
+
+    // Achievement sound
+    achievementUnlock: "audio/achievement_unlock.mp3",
   },
 };
 
-// Utility functions for configuration
+// Enhanced utility functions
 const CONFIG_UTILS = {
   /**
    * Get a random element from an array
@@ -446,10 +650,21 @@ const CONFIG_UTILS = {
   },
 
   /**
-   * Get a random training cone
+   * Get a weighted random bubble type for training
    */
-  getRandomTrainingCone() {
-    return this.getRandomElement(TRAINING_CONES);
+  getWeightedBubbleType() {
+    const totalWeight = BUBBLE_TYPES.reduce(
+      (sum, bubble) => sum + bubble.weight,
+      0
+    );
+    let random = Math.random() * totalWeight;
+
+    for (let i = 0; i < BUBBLE_TYPES.length; i++) {
+      random -= BUBBLE_TYPES[i].weight;
+      if (random <= 0) return BUBBLE_TYPES[i];
+    }
+
+    return BUBBLE_TYPES[0];
   },
 
   /**
@@ -530,6 +745,37 @@ const CONFIG_UTILS = {
       imgElement.alt = altText;
     }
   },
+
+  /**
+   * Save achievements to localStorage
+   */
+  saveAchievements(achievements) {
+    try {
+      localStorage.setItem(
+        "iceCreamFighterAchievements",
+        JSON.stringify(achievements)
+      );
+    } catch (error) {
+      console.warn("Could not save achievements:", error);
+    }
+  },
+
+  /**
+   * Load achievements from localStorage
+   */
+  loadAchievements() {
+    try {
+      const saved = localStorage.getItem("iceCreamFighterAchievements");
+      if (saved) {
+        const loadedAchievements = JSON.parse(saved);
+        // Merge with default achievements to add any new ones
+        return { ...ACHIEVEMENTS, ...loadedAchievements };
+      }
+    } catch (error) {
+      console.warn("Could not load achievements:", error);
+    }
+    return { ...ACHIEVEMENTS };
+  },
 };
 
 // Export for use in other files (if using modules)
@@ -543,9 +789,10 @@ if (typeof module !== "undefined" && module.exports) {
     TALK_RESPONSES,
     MALFUNCTION_MESSAGES,
     TALKDOWN_OPTIONS,
-    TRAINING_CONES,
+    BUBBLE_TYPES,
     SLOT_CONFIG,
     TRAINING_REWARDS,
+    ACHIEVEMENTS,
     AUDIO_CONFIG,
     CONFIG_UTILS,
   };

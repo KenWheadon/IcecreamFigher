@@ -1,7 +1,10 @@
-// Training Module with Enhanced Flow
+// Enhanced Training Module with Multiple Bubbles
 class Training {
   constructor(game) {
     this.game = game;
+    this.activeBubbles = [];
+    this.bubbleIdCounter = 0;
+    this.sessionTrainingTypes = new Set(); // Track what was trained this session
   }
 
   /**
@@ -39,22 +42,33 @@ class Training {
       });
     }
 
-    // Training target for cone clicking
+    // Enhanced training target for bubble clicking
     const trainingTarget = document.getElementById("training-target");
     if (trainingTarget) {
+      // Click on bubbles
       trainingTarget.addEventListener("click", (e) => {
-        const coneElement = e.target.closest(".moving-cone");
-        if (coneElement) {
-          const points = parseInt(coneElement.dataset.points) || 1;
-          this.game.playSound("coneClick");
-          this.collectCone(coneElement, points);
+        const bubbleElement = e.target.closest(".moving-bubble");
+        if (bubbleElement) {
+          const bubbleId = parseInt(bubbleElement.dataset.bubbleId);
+          const bubble = this.activeBubbles.find((b) => b.id === bubbleId);
+          if (bubble) {
+            this.collectBubble(bubbleElement, bubble);
+          }
+        } else {
+          // Clicked on background - reset combo
+          this.resetCombo();
         }
+      });
+
+      // Prevent context menu on right click
+      trainingTarget.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
       });
     }
   }
 
   /**
-   * Start training phase with new flow
+   * Start training phase with enhanced bubble system
    */
   startTraining() {
     try {
@@ -63,6 +77,9 @@ class Training {
       this.game.gameState.trainingActive = true;
       this.game.gameState.slotSpins = 0;
       this.game.gameState.trainingPurchases = 0;
+      this.sessionTrainingTypes.clear();
+      this.activeBubbles = [];
+      this.bubbleIdCounter = 0;
 
       // Reset UI
       this.game.updateElement("training-score", "0");
@@ -105,7 +122,8 @@ class Training {
       const target = document.getElementById("training-target");
       if (target) {
         target.innerHTML = "";
-        target.style.display = "block"; // Show the click game
+        target.style.display = "block";
+        target.classList.remove("combo-lost");
       }
 
       // Hide continue button initially
@@ -118,7 +136,7 @@ class Training {
       this.showTrainingPhaseUI("mini-game");
 
       this.game.playSound("trainingStart");
-      this.spawnTrainingCones();
+      this.startBubbleSpawning();
       this.startTrainingTimer();
     } catch (error) {
       console.error("Failed to start training:", error);
@@ -135,7 +153,7 @@ class Training {
     switch (phase) {
       case "mini-game":
         instructions.textContent =
-          "Click the ice cream cones for points! Higher = more points!";
+          "Click the floating bubbles for points! Different sizes = different points! Don't click the background!";
         break;
       case "rewards":
         instructions.textContent =
@@ -161,96 +179,132 @@ class Training {
   }
 
   /**
-   * Spawn training cones
+   * Start bubble spawning system
    */
-  spawnTrainingCones() {
+  startBubbleSpawning() {
     if (!this.game.gameState.trainingActive) return;
+
+    this.spawnBubble();
+
+    // Schedule next spawn
+    const spawnDelay = Math.max(
+      GAME_CONFIG.TRAINING_SPAWN_MIN_DELAY,
+      GAME_CONFIG.TRAINING_SPAWN_BASE_DELAY -
+        this.game.gameState.trainingScore * 2
+    );
+
+    setTimeout(() => this.startBubbleSpawning(), spawnDelay);
+  }
+
+  /**
+   * Spawn a single bubble
+   */
+  spawnBubble() {
+    if (!this.game.gameState.trainingActive) return;
+    if (this.activeBubbles.length >= GAME_CONFIG.MAX_SIMULTANEOUS_BUBBLES)
+      return;
 
     try {
       const target = document.getElementById("training-target");
       if (!target) return;
 
-      const cone = document.createElement("div");
-      cone.className = "moving-cone";
+      const bubbleType = CONFIG_UTILS.getWeightedBubbleType();
+      const bubble = document.createElement("div");
 
-      const coneData = CONFIG_UTILS.getRandomTrainingCone();
-      if (coneData.image) {
-        const img = document.createElement("img");
-        img.src = coneData.image;
-        img.alt = "Training Cone";
-        img.className = "cone-image";
-        img.style.pointerEvents = "none";
-        cone.appendChild(img);
-      } else {
-        cone.textContent = coneData.emoji;
-      }
+      const bubbleId = this.bubbleIdCounter++;
+      bubble.className = `moving-bubble size-${bubbleType.size} type-${bubbleType.type}`;
+      bubble.dataset.bubbleId = bubbleId;
+      bubble.dataset.points = bubbleType.basePoints.toString();
+      bubble.dataset.type = bubbleType.type;
 
-      const x = Math.random() * (target.offsetWidth - 60);
-      cone.style.left = x + "px";
-      cone.style.bottom = "0px";
+      // Set bubble content
+      bubble.textContent = bubbleType.emoji;
 
-      const maxHeight = target.offsetHeight - 60;
-      const targetHeight = Math.random() * maxHeight;
-      const points = Math.floor((targetHeight / maxHeight) * 5) + 1;
+      // Set bubble style based on type
+      bubble.style.background = `radial-gradient(circle, ${
+        bubbleType.color
+      }, ${bubbleType.color.replace("0.8", "0.4")})`;
+      bubble.style.borderColor = bubbleType.color;
+      bubble.style.boxShadow = `0 0 15px ${bubbleType.color.replace(
+        "0.8",
+        "0.5"
+      )}`;
 
-      cone.dataset.points = points.toString();
-      cone.dataset.height = targetHeight.toString();
+      // Position bubble randomly
+      const maxX = target.offsetWidth - 80;
+      const maxY = target.offsetHeight - 80;
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
 
-      target.appendChild(cone);
+      bubble.style.left = x + "px";
+      bubble.style.top = y + "px";
 
-      // Animate cone upward
+      // Add to active bubbles tracking
+      const bubbleData = {
+        id: bubbleId,
+        element: bubble,
+        type: bubbleType.type,
+        points: bubbleType.basePoints,
+        spawnTime: Date.now(),
+      };
+      this.activeBubbles.push(bubbleData);
+
+      target.appendChild(bubble);
+
+      // Remove bubble after lifetime expires
       setTimeout(() => {
-        cone.style.bottom = targetHeight + "px";
-      }, 50);
-
-      // Remove cone after timeout
-      setTimeout(() => {
-        if (cone.parentNode) {
-          cone.remove();
-          if (this.game.gameState.trainingCombo > 0) {
-            this.game.gameState.trainingCombo = 0;
-            this.game.updateElement("combo-counter", "0");
-          }
-        }
-      }, GAME_CONFIG.TRAINING_CONE_LIFETIME);
-
-      // Schedule next cone
-      const spawnDelay = Math.max(
-        GAME_CONFIG.TRAINING_SPAWN_MIN_DELAY,
-        GAME_CONFIG.TRAINING_SPAWN_BASE_DELAY -
-          this.game.gameState.trainingScore * 10
-      );
-      setTimeout(() => this.spawnTrainingCones(), spawnDelay);
+        this.removeBubble(bubbleId);
+      }, GAME_CONFIG.TRAINING_BUBBLE_LIFETIME);
     } catch (error) {
-      console.error("Failed to spawn training cone:", error);
+      console.error("Failed to spawn bubble:", error);
     }
   }
 
   /**
-   * Collect a training cone
+   * Remove a bubble from the game
    */
-  collectCone(cone, points) {
+  removeBubble(bubbleId) {
+    const bubbleIndex = this.activeBubbles.findIndex((b) => b.id === bubbleId);
+    if (bubbleIndex !== -1) {
+      const bubble = this.activeBubbles[bubbleIndex];
+      if (bubble.element && bubble.element.parentNode) {
+        bubble.element.remove();
+      }
+      this.activeBubbles.splice(bubbleIndex, 1);
+    }
+  }
+
+  /**
+   * Collect a bubble when clicked
+   */
+  collectBubble(bubbleElement, bubbleData) {
     try {
+      // Increase combo
       this.game.gameState.trainingCombo++;
       const comboMultiplier = Math.min(
         this.game.gameState.trainingCombo,
         GAME_CONFIG.MAX_COMBO_MULTIPLIER
       );
-      const totalPoints = points * comboMultiplier;
+      const totalPoints = bubbleData.points * comboMultiplier;
       this.game.gameState.trainingScore += totalPoints;
 
+      // Play sound effects
+      this.game.playSound("bubbleClick");
       if (this.game.gameState.trainingCombo > 1) {
         this.game.playSound("comboIncrease");
       }
+
+      // Add bubble pop animation
+      bubbleElement.classList.add("bubble-pop");
 
       // Show score popup
       const target = document.getElementById("training-target");
       if (target) {
         const scoreFloat = document.createElement("div");
-        scoreFloat.className = "cone-score";
+        scoreFloat.className = "bubble-score";
         scoreFloat.textContent = "+" + totalPoints;
-        scoreFloat.style.left = cone.style.left;
-        scoreFloat.style.bottom = cone.dataset.height + "px";
+        scoreFloat.style.left = bubbleElement.style.left;
+        scoreFloat.style.top = bubbleElement.style.top;
         target.appendChild(scoreFloat);
 
         setTimeout(() => {
@@ -260,6 +314,7 @@ class Training {
         }, 1000);
       }
 
+      // Update UI
       this.game.updateElement(
         "training-score",
         this.game.gameState.trainingScore.toString()
@@ -269,9 +324,38 @@ class Training {
         this.game.gameState.trainingCombo.toString()
       );
 
-      cone.remove();
+      // Add combo flash animation
+      const comboElement = document.getElementById("combo-counter");
+      if (comboElement && this.game.gameState.trainingCombo > 1) {
+        comboElement.parentElement.classList.add("combo-flash");
+        setTimeout(() => {
+          comboElement.parentElement.classList.remove("combo-flash");
+        }, 500);
+      }
+
+      // Remove bubble from active list and DOM
+      this.removeBubble(bubbleData.id);
     } catch (error) {
-      console.error("Failed to collect cone:", error);
+      console.error("Failed to collect bubble:", error);
+    }
+  }
+
+  /**
+   * Reset combo when background is clicked
+   */
+  resetCombo() {
+    if (this.game.gameState.trainingCombo > 0) {
+      this.game.gameState.trainingCombo = 0;
+      this.game.updateElement("combo-counter", "0");
+
+      // Show visual feedback
+      const target = document.getElementById("training-target");
+      if (target) {
+        target.classList.add("combo-lost");
+        setTimeout(() => {
+          target.classList.remove("combo-lost");
+        }, 500);
+      }
     }
   }
 
@@ -285,6 +369,14 @@ class Training {
       clearInterval(this.game.timers.training);
       this.game.timers.training = null;
     }
+
+    // Clear all active bubbles
+    this.activeBubbles.forEach((bubble) => {
+      if (bubble.element && bubble.element.parentNode) {
+        bubble.element.remove();
+      }
+    });
+    this.activeBubbles = [];
 
     // Hide the mini-game elements
     const target = document.getElementById("training-target");
@@ -344,7 +436,7 @@ class Training {
   }
 
   /**
-   * Update training button costs and availability (fixed consistent costs)
+   * Update training button costs and availability
    */
   updateTrainingButtonCosts() {
     const buttons = document.querySelectorAll("[data-training]");
@@ -358,24 +450,21 @@ class Training {
         if (rewardType === "health") {
           const bonusReward = document.getElementById("bonus-reward");
           if (bonusReward) {
-            // Show the bonus reward if they have enough training score for the threshold
             if (
               this.game.gameState.trainingScore >=
               GAME_CONFIG.TRAINING_BONUS_THRESHOLD
             ) {
               bonusReward.classList.add("available");
             }
-
-            // Update the button content and state regardless of threshold
             bonusReward.innerHTML = `
-              <img src="${reward.icon}" alt="Health Upgrade" class="upgrade-icon" />
+              <div style="font-size: 32px;">${reward.icon}</div>
               <div class="btn-text">${reward.name} (${cost} pts)</div>
             `;
             bonusReward.disabled = !canAfford;
           }
         } else {
           btn.innerHTML = `
-            <img src="${reward.icon}" alt="${reward.name}" class="upgrade-icon" />
+            <div style="font-size: 32px;">${reward.icon}</div>
             <div class="btn-text">${reward.name} (${cost} pts)</div>
           `;
           btn.disabled = !canAfford;
@@ -385,11 +474,11 @@ class Training {
   }
 
   /**
-   * Get cost for training reward based on purchases made (fixed consistent pricing)
+   * Get cost for training reward (progressive pricing)
    */
   getTrainingCost(rewardType) {
-    const baseCost = 5; // All training rewards have the same base cost
-    return baseCost + this.game.gameState.trainingPurchases * 5;
+    const baseCost = 25; // Increased base cost
+    return baseCost + this.game.gameState.trainingPurchases * 15;
   }
 
   /**
@@ -415,12 +504,24 @@ class Training {
     try {
       this.game.gameState.trainingScore -= cost;
       this.game.gameState.trainingPurchases++;
+      this.sessionTrainingTypes.add(rewardType);
+
+      // Store pre-upgrade stats for achievement checking
+      const preUpgradeStats = {
+        attack: this.game.gameState.player.attack,
+        defense: this.game.gameState.player.defense,
+        sanity: this.game.gameState.player.maxSanity,
+        hp: this.game.gameState.player.maxHp,
+      };
 
       reward.apply(this.game.gameState.player);
       this.game.addBattleLog(
         `Training complete! ${reward.name}! (Cost: ${cost} points)`
       );
       this.game.playSound("upgradeApply");
+
+      // Check for achievement unlocks
+      this.checkTrainingAchievements(rewardType, preUpgradeStats);
 
       this.game.updateElement(
         "final-score",
@@ -435,6 +536,66 @@ class Training {
       }
     } catch (error) {
       console.error("Failed to apply training reward:", error);
+    }
+  }
+
+  /**
+   * Check for training-related achievements
+   */
+  checkTrainingAchievements(rewardType, preUpgradeStats) {
+    const player = this.game.gameState.player;
+
+    // Check stat milestone achievements
+    if (
+      rewardType === "attack" &&
+      player.attack > 100 &&
+      preUpgradeStats.attack <= 100
+    ) {
+      this.game.unlockAchievement("attack_100");
+    }
+    if (
+      rewardType === "defense" &&
+      player.defense > 100 &&
+      preUpgradeStats.defense <= 100
+    ) {
+      this.game.unlockAchievement("defense_100");
+    }
+    if (
+      rewardType === "sanity" &&
+      player.maxSanity > 100 &&
+      preUpgradeStats.sanity <= 100
+    ) {
+      this.game.unlockAchievement("sanity_100");
+    }
+    if (
+      rewardType === "health" &&
+      player.maxHp > 300 &&
+      preUpgradeStats.hp <= 300
+    ) {
+      this.game.unlockAchievement("hp_300");
+    }
+  }
+
+  /**
+   * Check for focused training achievements (called when starting next battle)
+   */
+  checkFocusedTrainingAchievements() {
+    if (this.sessionTrainingTypes.size === 1) {
+      const trainedType = Array.from(this.sessionTrainingTypes)[0];
+      switch (trainedType) {
+        case "attack":
+          this.game.unlockAchievement("attack_only");
+          break;
+        case "defense":
+          this.game.unlockAchievement("defense_only");
+          break;
+        case "sanity":
+          this.game.unlockAchievement("sanity_only");
+          break;
+        case "health":
+          this.game.unlockAchievement("health_only");
+          break;
+      }
     }
   }
 
@@ -463,13 +624,12 @@ class Training {
   }
 
   /**
-   * Add visual feedback to slot reels (fixed to only highlight on 3-match wins)
+   * Add visual feedback to slot reels
    */
   addSlotFeedback(results, isWin) {
     const reels = ["reel1", "reel2", "reel3"];
 
     if (isWin) {
-      // Only highlight all reels for true wins (3 matching symbols)
       reels.forEach((reelId) => {
         const reel = document.getElementById(reelId);
         if (reel) {
@@ -477,9 +637,7 @@ class Training {
         }
       });
     }
-    // No highlighting for partial matches or losses
 
-    // Clear feedback after a delay
     setTimeout(() => {
       this.clearSlotFeedback();
     }, 2000);
@@ -489,26 +647,23 @@ class Training {
    * Highlight paytable row for winning combination
    */
   highlightPaytableWin(symbolName) {
-    // Clear previous highlights
     const paytableRows = document.querySelectorAll(".paytable-row");
     paytableRows.forEach((row) => {
       row.classList.remove("paytable-winner");
     });
 
-    // Highlight winning row
-    const paytableRows2 = document.querySelectorAll(".paytable-row");
-    paytableRows2.forEach((row) => {
-      const symbols = row.querySelectorAll(".paytable-symbol");
-      if (symbols.length > 0) {
-        const firstSymbol = symbols[0];
-        const symbolAlt = firstSymbol.alt.toLowerCase();
-        if (symbolAlt === symbolName || symbolAlt.includes(symbolName)) {
-          row.classList.add("paytable-winner");
-        }
+    paytableRows.forEach((row) => {
+      const symbols = row.querySelector(".paytable-symbols");
+      if (
+        symbols &&
+        symbols.textContent.includes(
+          SLOT_CONFIG.symbols.find((s) => s.name === symbolName)?.emoji
+        )
+      ) {
+        row.classList.add("paytable-winner");
       }
     });
 
-    // Remove highlight after delay
     setTimeout(() => {
       paytableRows.forEach((row) => {
         row.classList.remove("paytable-winner");
@@ -548,8 +703,6 @@ class Training {
       );
 
       this.game.playSound("spin", 0.5);
-
-      // Clear previous feedback
       this.clearSlotFeedback();
 
       // Generate results
@@ -563,8 +716,7 @@ class Training {
       const reels = ["reel1", "reel2", "reel3"];
       reels.forEach((reelId, index) => {
         const reel = document.getElementById(reelId);
-        const img = reel?.querySelector(".slot-symbol");
-        if (!reel || !img) return;
+        if (!reel) return;
 
         reel.classList.add("spinning");
 
@@ -573,24 +725,17 @@ class Training {
           const randomSymbol = CONFIG_UTILS.getRandomElement(
             SLOT_CONFIG.symbols
           );
-          if (randomSymbol.image) {
-            CONFIG_UTILS.updateImage(
-              img,
-              randomSymbol.image,
-              randomSymbol.name
-            );
+          const reelContent = reel.querySelector("div");
+          if (reelContent && randomSymbol) {
+            reelContent.textContent = randomSymbol.emoji;
           }
           spins++;
 
           if (spins > GAME_CONFIG.SLOT_SPIN_COUNT_BASE + index * 5) {
             clearInterval(spinInterval);
             reel.classList.remove("spinning");
-            if (results[index].image) {
-              CONFIG_UTILS.updateImage(
-                img,
-                results[index].image,
-                results[index].name
-              );
+            if (reelContent && results[index]) {
+              reelContent.textContent = results[index].emoji;
             }
 
             if (index === 2) {
@@ -607,19 +752,28 @@ class Training {
   }
 
   /**
-   * Check slot machine results and apply rewards (enhanced feedback)
+   * Check slot machine results and apply rewards
    */
   checkSlotResults(results) {
     const resultElement = document.getElementById("slot-result");
     if (!resultElement) return;
 
     try {
-      // Only give rewards for exactly 3 matching symbols
       const isWin =
         results[0].name === results[1].name &&
         results[1].name === results[2].name;
 
-      // Create slot message area if it doesn't exist
+      // Track consecutive losses for achievement
+      if (!isWin) {
+        this.game.gameState.slotConsecutiveLosses =
+          (this.game.gameState.slotConsecutiveLosses || 0) + 1;
+        if (this.game.gameState.slotConsecutiveLosses >= 3) {
+          this.game.unlockAchievement("slot_unlucky");
+        }
+      } else {
+        this.game.gameState.slotConsecutiveLosses = 0;
+      }
+
       let slotMessage = document.getElementById("slot-win-message");
       if (!slotMessage) {
         slotMessage = document.createElement("div");
@@ -644,7 +798,15 @@ class Training {
         const reward = SLOT_CONFIG.rewards.triple[symbolName];
 
         if (reward) {
-          // Show big win message
+          // Unlock slot achievement
+          this.game.unlockAchievement(`slot_${symbolName}`);
+
+          // Track for focused training achievements
+          if (reward.attack) this.sessionTrainingTypes.add("attack");
+          if (reward.defense) this.sessionTrainingTypes.add("defense");
+          if (reward.sanity) this.sessionTrainingTypes.add("sanity");
+          if (reward.hp) this.sessionTrainingTypes.add("health");
+
           slotMessage.innerHTML = `<span style="color: ${reward.color}; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">🎉 YOU WON! 🎉</span>`;
 
           // Apply the reward
@@ -652,6 +814,7 @@ class Training {
           if (reward.defense)
             this.game.gameState.player.defense += reward.defense;
           if (reward.hp) {
+            this.game.gameState.player.maxHp += reward.hp;
             this.game.gameState.player.hp = Math.min(
               this.game.gameState.player.hp + reward.hp,
               this.game.gameState.player.maxHp
@@ -674,28 +837,22 @@ class Training {
 
           resultElement.innerHTML = `<span style="color: ${reward.color};">🎉 ${reward.name}</span>`;
           this.game.playSound(symbolName === "ice" ? "jackpot" : "win");
-
-          // Highlight paytable
           this.highlightPaytableWin(symbolName);
         }
       } else {
-        // Show lose message
         slotMessage.innerHTML = `<span style="color: #95a5a6;">YOU LOSE</span>`;
         resultElement.innerHTML = `<span style="color: #95a5a6;">No match - try again!</span>`;
       }
 
-      // Clear message after delay
       setTimeout(() => {
         if (slotMessage) {
           slotMessage.innerHTML = "";
         }
       }, 3000);
 
-      // Add visual feedback to reels
       this.addSlotFeedback(results, isWin);
-
       this.updateSlotButtonState();
-      this.updateTrainingButtonCosts(); // Update in case we got bonus points
+      this.updateTrainingButtonCosts();
     } catch (error) {
       console.error("Failed to check slot results:", error);
     }

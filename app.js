@@ -1,4 +1,4 @@
-// Ice Cream Fighter - Main Application Controller
+// Enhanced Ice Cream Fighter - Main Application Controller with Achievements
 class IceCreamFighter {
   constructor() {
     this.gameState = {
@@ -17,7 +17,9 @@ class IceCreamFighter {
       trainingActive: false,
       slotSpins: 0,
       trainingPurchases: 0,
+      slotConsecutiveLosses: 0,
       currentScreen: "fighter-select-screen",
+      selectedFighterType: null,
     };
 
     this.timers = {
@@ -28,6 +30,9 @@ class IceCreamFighter {
     this.audioEnabled = false;
     this.currentMusic = null;
     this.audioInitialized = false;
+
+    // Achievement system
+    this.achievements = CONFIG_UTILS.loadAchievements();
 
     // Initialize module instances
     this.fighterSelection = new FighterSelection(this);
@@ -45,6 +50,7 @@ class IceCreamFighter {
   init() {
     try {
       this.setupEventListeners();
+      this.setupAchievementSystem();
       this.showScreen("fighter-select-screen");
       console.log("Ice Cream Fighter initialized successfully");
       console.log("Audio will be enabled after first user interaction");
@@ -76,6 +82,128 @@ class IceCreamFighter {
     this.combat.setupEventListeners();
     this.victoryScreen.setupEventListeners();
     this.gameOverScreen.setupEventListeners();
+  }
+
+  /**
+   * Set up achievement system
+   */
+  setupAchievementSystem() {
+    this.renderAchievements();
+
+    // Set up achievement drawer toggle
+    window.toggleAchievements = () => {
+      const drawer = document.getElementById("achievement-drawer");
+      if (drawer) {
+        drawer.classList.toggle("open");
+      }
+    };
+  }
+
+  /**
+   * Render achievements in the drawer
+   */
+  renderAchievements() {
+    const grid = document.getElementById("achievement-grid");
+    if (!grid) return;
+
+    grid.innerHTML = "";
+
+    Object.entries(this.achievements).forEach(([key, achievement]) => {
+      const item = document.createElement("div");
+      item.className = `achievement-item ${
+        achievement.unlocked ? "unlocked" : "locked"
+      }`;
+
+      item.innerHTML = `
+        <div class="achievement-icon">${achievement.icon}</div>
+        <div class="achievement-name">${achievement.name}</div>
+        <div class="achievement-tooltip">${achievement.description}</div>
+      `;
+
+      grid.appendChild(item);
+    });
+  }
+
+  /**
+   * Unlock an achievement
+   */
+  unlockAchievement(achievementKey) {
+    if (!this.achievements[achievementKey]) {
+      console.warn(`Achievement not found: ${achievementKey}`);
+      return;
+    }
+
+    if (this.achievements[achievementKey].unlocked) {
+      return; // Already unlocked
+    }
+
+    this.achievements[achievementKey].unlocked = true;
+    CONFIG_UTILS.saveAchievements(this.achievements);
+
+    // Play achievement sound
+    this.playSound("achievementUnlock");
+
+    // Show achievement notification
+    this.showAchievementNotification(this.achievements[achievementKey]);
+
+    // Re-render achievements
+    this.renderAchievements();
+
+    console.log(
+      `Achievement unlocked: ${this.achievements[achievementKey].name}`
+    );
+  }
+
+  /**
+   * Show achievement notification
+   */
+  showAchievementNotification(achievement) {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 10000;
+      font-family: "Comic Sans MS", cursive, sans-serif;
+      font-size: 14px;
+      max-width: 300px;
+      transform: translateX(100%);
+      transition: transform 0.5s ease;
+    `;
+
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="font-size: 24px;">${achievement.icon}</div>
+        <div>
+          <div style="font-weight: bold;">Achievement Unlocked!</div>
+          <div>${achievement.name}</div>
+          <div style="font-size: 12px; opacity: 0.8;">${achievement.description}</div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+      notification.style.transform = "translateX(0)";
+    }, 100);
+
+    // Animate out and remove
+    setTimeout(() => {
+      notification.style.transform = "translateX(100%)";
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 500);
+    }, 3000);
   }
 
   /**
@@ -140,6 +268,11 @@ class IceCreamFighter {
    * Start next battle
    */
   startNextBattle() {
+    // Check for focused training achievements before starting next battle
+    if (this.training && this.training.checkFocusedTrainingAchievements) {
+      this.training.checkFocusedTrainingAchievements();
+    }
+
     this.gameState.currentBattle++;
     this.playMusic("battle");
     this.showScreen("battle-screen");
@@ -152,6 +285,80 @@ class IceCreamFighter {
   updateMoveButtonDamage() {
     if (this.combat && this.combat.updateMoveButtonDamage) {
       this.combat.updateMoveButtonDamage();
+    }
+  }
+
+  /**
+   * Update fighter-specific move names in UI
+   */
+  updateFighterMoveNames() {
+    if (!this.gameState.player || !this.gameState.selectedFighterType) return;
+
+    const fighter = FIGHTER_TEMPLATES[this.gameState.selectedFighterType];
+    if (!fighter || !fighter.moves) return;
+
+    // Update move button names
+    const lightName = document.getElementById("light-move-name");
+    const heavyName = document.getElementById("heavy-move-name");
+    const defendName = document.getElementById("defend-move-name");
+    const boostName = document.getElementById("boost-move-name");
+
+    if (lightName) lightName.textContent = fighter.moves.light.name;
+    if (heavyName) heavyName.textContent = fighter.moves.heavy.name;
+    if (defendName) defendName.textContent = fighter.moves.defend.name;
+    if (boostName) boostName.textContent = fighter.moves.boost.name;
+
+    // Update move button icons/emojis
+    const lightBtn = document.getElementById("btn-light");
+    const heavyBtn = document.getElementById("btn-heavy");
+    const defendBtn = document.getElementById("btn-defend");
+    const boostBtn = document.getElementById("btn-boost");
+
+    if (lightBtn) {
+      const icon =
+        lightBtn.querySelector("img") || lightBtn.querySelector("div");
+      if (icon && icon.tagName === "DIV") {
+        icon.textContent = fighter.moves.light.icon;
+      }
+    }
+    if (heavyBtn) {
+      const icon =
+        heavyBtn.querySelector("img") || heavyBtn.querySelector("div");
+      if (icon && icon.tagName === "DIV") {
+        icon.textContent = fighter.moves.heavy.icon;
+      }
+    }
+    if (defendBtn) {
+      const icon =
+        defendBtn.querySelector("img") || defendBtn.querySelector("div");
+      if (icon && icon.tagName === "DIV") {
+        icon.textContent = fighter.moves.defend.icon;
+      }
+    }
+    if (boostBtn) {
+      const icon =
+        boostBtn.querySelector("img") || boostBtn.querySelector("div");
+      if (icon && icon.tagName === "DIV") {
+        icon.textContent = fighter.moves.boost.icon;
+      }
+    }
+  }
+
+  /**
+   * Handle enemy defeat and unlock achievement
+   */
+  onEnemyDefeated(battleNumber) {
+    const achievementKey = `enemy_${battleNumber}`;
+    this.unlockAchievement(achievementKey);
+  }
+
+  /**
+   * Handle game victory and unlock character achievement
+   */
+  onGameVictory() {
+    if (this.gameState.selectedFighterType) {
+      const achievementKey = `${this.gameState.selectedFighterType}_victory`;
+      this.unlockAchievement(achievementKey);
     }
   }
 
@@ -281,17 +488,39 @@ document.addEventListener("DOMContentLoaded", () => {
   window.testAudio = () => {
     game.initializeAudio();
     game.playSound("buttonClick");
-    document.getElementById("audio-status").textContent = game.audioEnabled
-      ? "Enabled"
-      : "Disabled";
+    const statusEl = document.getElementById("audio-status");
+    if (statusEl) {
+      statusEl.textContent = game.audioEnabled ? "Enabled" : "Disabled";
+    }
   };
 
   window.testMusic = () => {
     game.initializeAudio();
     game.playMusic("menu");
-    document.getElementById("audio-status").textContent = game.audioEnabled
-      ? "Enabled"
-      : "Disabled";
+    const statusEl = document.getElementById("audio-status");
+    if (statusEl) {
+      statusEl.textContent = game.audioEnabled ? "Enabled" : "Disabled";
+    }
+  };
+
+  // Debug achievement unlock function
+  window.testAchievement = (key) => {
+    game.unlockAchievement(key);
+  };
+
+  // Debug function to unlock all achievements
+  window.unlockAllAchievements = () => {
+    Object.keys(game.achievements).forEach((key) => {
+      game.unlockAchievement(key);
+    });
+  };
+
+  // Debug function to reset achievements
+  window.resetAchievements = () => {
+    localStorage.removeItem("iceCreamFighterAchievements");
+    game.achievements = CONFIG_UTILS.loadAchievements();
+    game.renderAchievements();
+    console.log("Achievements reset");
   };
 
   setInterval(() => {

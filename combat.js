@@ -1,4 +1,4 @@
-// Combat System Module
+// Enhanced Combat System Module with Achievement Integration
 class Combat {
   constructor(game) {
     this.game = game;
@@ -53,7 +53,7 @@ class Combat {
       );
 
       this.updateBattleUI();
-      this.updateMoveButtonDamage(); // Update damage display when battle starts
+      this.updateMoveButtonDamage();
       this.game.addBattleLog(
         `Battle ${this.game.gameState.currentBattle} begins!`
       );
@@ -120,15 +120,6 @@ class Combat {
           this.game.gameState.isMalfunctioning;
       });
 
-      const dialoguePortrait = document.getElementById("dialogue-portrait");
-      if (dialoguePortrait && this.game.gameState.player) {
-        CONFIG_UTILS.updateImage(
-          dialoguePortrait,
-          this.game.gameState.player.image,
-          `${this.game.gameState.player.name} Portrait`
-        );
-      }
-
       // Update damage display whenever UI updates
       this.updateMoveButtonDamage();
     } catch (error) {
@@ -142,7 +133,7 @@ class Combat {
   updateFighterUI(type, fighter) {
     const elements = {
       name: document.getElementById(`${type}-name`),
-      image: document.getElementById(`${type}-image`),
+      emoji: document.getElementById(`${type}-emoji`),
       hp: document.getElementById(`${type}-hp`),
       maxHp: document.getElementById(`${type}-max-hp`),
       sanity: document.getElementById(`${type}-sanity`),
@@ -152,8 +143,8 @@ class Combat {
     };
 
     if (elements.name) elements.name.textContent = fighter.name;
-    if (elements.image && fighter.image) {
-      CONFIG_UTILS.updateImage(elements.image, fighter.image, fighter.name);
+    if (elements.emoji && fighter.sprite) {
+      elements.emoji.textContent = fighter.sprite;
     }
     if (elements.hp) elements.hp.textContent = Math.max(0, fighter.hp);
     if (elements.maxHp) elements.maxHp.textContent = fighter.maxHp;
@@ -230,7 +221,9 @@ class Combat {
         this.game.gameState.player.sanity - sanityCost
       );
       this.game.addBattleLog(
-        `${this.game.gameState.player.name} uses ${move.name}, costing ${sanityCost} sanity!`
+        `${this.game.gameState.player.name} uses ${this.getPlayerMoveName(
+          moveType
+        )}, costing ${sanityCost} sanity!`
       );
 
       if (this.game.gameState.player.sanity <= 0) {
@@ -248,6 +241,20 @@ class Combat {
   }
 
   /**
+   * Get player's move name based on selected fighter
+   */
+  getPlayerMoveName(moveType) {
+    if (this.game.gameState.selectedFighterType) {
+      const fighter =
+        FIGHTER_TEMPLATES[this.game.gameState.selectedFighterType];
+      if (fighter && fighter.moves && fighter.moves[moveType]) {
+        return fighter.moves[moveType].name;
+      }
+    }
+    return MOVE_DEFINITIONS[moveType].name;
+  }
+
+  /**
    * Execute player move effects
    */
   executePlayerMove(moveType) {
@@ -255,15 +262,13 @@ class Combat {
     const playerSprite = document.getElementById("player-sprite");
     const enemySprite = document.getElementById("enemy-sprite");
 
-    if (move.sound) {
-      this.game.playSound(moveType);
-    }
+    this.game.playSound(moveType);
 
     switch (moveType) {
       case "defend":
         this.game.addAnimationClass(playerSprite, "defend-animation");
         this.game.addBattleLog(
-          `${this.game.gameState.player.name} raises an Ice Shield!`
+          `${this.game.gameState.player.name} raises a protective barrier!`
         );
         this.game.gameState.playerDefending = true;
         break;
@@ -272,7 +277,7 @@ class Combat {
         this.game.gameState.playerBoost = true;
         this.game.addAnimationClass(playerSprite, "boost-animation");
         this.game.addBattleLog(
-          `${this.game.gameState.player.name} activates Sugar Rush! Next attack will deal +60% damage!`
+          `${this.game.gameState.player.name} powers up! Next attack will deal +50% damage!`
         );
         break;
 
@@ -283,13 +288,17 @@ class Combat {
 
         if (this.game.gameState.playerBoost) {
           damage = Math.floor(damage * GAME_CONFIG.BOOST_MULTIPLIER);
-          this.game.gameState.playerBoost = false; // Clear boost after applying it
+          this.game.gameState.playerBoost = false;
           this.game.addBattleLog(
-            `${this.game.gameState.player.name} uses boosted ${move.name}!`
+            `${
+              this.game.gameState.player.name
+            } uses boosted ${this.getPlayerMoveName(moveType)}!`
           );
         } else {
           this.game.addBattleLog(
-            `${this.game.gameState.player.name} uses ${move.name}!`
+            `${this.game.gameState.player.name} uses ${this.getPlayerMoveName(
+              moveType
+            )}!`
           );
         }
 
@@ -429,10 +438,10 @@ class Combat {
 
             if (this.game.gameState.playerBoost) {
               this.game.gameState.playerBoost = false;
-              this.game.addBattleLog("Your Sugar Rush was interrupted!");
+              this.game.addBattleLog("Your power up was interrupted!");
             }
           } else {
-            this.game.addBattleLog("Your Ice Shield blocked the attack!");
+            this.game.addBattleLog("Your defense blocked the attack!");
           }
           break;
       }
@@ -484,7 +493,13 @@ class Combat {
     this.game.addBattleLog(`${this.game.gameState.enemy.name} defeated!`);
     this.game.playSound("battleWin");
 
+    // Unlock enemy defeat achievement
+    this.game.onEnemyDefeated(this.game.gameState.currentBattle);
+
     if (this.game.gameState.currentBattle >= GAME_CONFIG.TOTAL_BATTLES) {
+      // Game completed - unlock character victory achievement
+      this.game.onGameVictory();
+
       setTimeout(() => {
         this.game.playMusic("victory");
         this.game.playSound("victorySound");
@@ -510,7 +525,9 @@ class Combat {
 
     if (!tooltip || !this.game.gameState.enemy) return;
 
-    let html = `<div><strong>${move.description}</strong></div>`;
+    const moveName = this.getPlayerMoveName(moveType);
+    let html = `<div><strong>${moveName}</strong></div>`;
+    html += `<div>${move.description}</div>`;
 
     // Show damage calculation for attack moves
     if (
@@ -537,7 +554,7 @@ class Combat {
           boostedTotal,
           enemyDefense
         );
-        html += `<div style="color: #f5576c; font-weight: bold;">With Sugar Rush: ${boostedFinal} damage!</div>`;
+        html += `<div style="color: #f5576c; font-weight: bold;">With Power Up: ${boostedFinal} damage!</div>`;
       }
     }
 
@@ -567,7 +584,7 @@ class Combat {
       this.game.gameState.isPlayerTurn = false;
       this.game.playSound("talkStart");
 
-      const fighterType = this.game.gameState.player.name.toLowerCase();
+      const fighterType = this.game.gameState.selectedFighterType || "vanilla";
       const statements =
         FIGHTER_STATEMENTS[fighterType] || FIGHTER_STATEMENTS.vanilla;
       const statement = CONFIG_UTILS.getRandomElement(statements);
