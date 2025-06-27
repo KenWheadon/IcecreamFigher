@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ice Cream Fighter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Fighter Selection Screen -->
+        <div class="screen" id="fighter-select-screen">
+            <h1>🍦 Ice Cream Fighter 🍦</h1>
+            <h2>Choose Your Fighter!</h2>
+            <div class="fighter-select">
+                <div class="fighter-option" data-fighter="vanilla">
+                    <div class="fighter-sprite">🍦</div>
+                    <h3>Vanilla</h3>
+                    <p>The Classic</p>
+                    <small>Balanced Stats</small>
+                </div>
+                <div class="fighter-option" data-fighter="chocolate">
+                    <div class="fighter-sprite">🍫</div>
+                    <h3>Chocolate</h3>
+                    <p>The Strong</p>
+                    <small>High Attack</small>
+                </div>
+                <div class="fighter-option" data-fighter="strawberry">
+                    <div class="fighter-sprite">🍓</div>
+                    <h3>Strawberry</h3>
+                    <p>The Sweet</p>
+                    <small>High Defense</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battle Screen -->
+        <div class="screen" id="battle-screen">
+            <h2>Battle <span id="battle-number">1</span> of 5</h2>
+            <div class="battle-arena">
+                <div class="fighter-card">
+                    <h3 id="player-name">Your Fighter</h3>
+                    <div class="fighter-sprite" id="player-sprite">🍦</div>
+                    <div class="stats">
+                        <div>HP: <span id="player-hp">100</span>/<span id="player-max-hp">100</span></div>
+                        <div class="stat-bar">
+                            <div class="stat-fill hp-fill" id="player-hp-bar"></div>
+                        </div>
+                        <div>Sanity: <span id="player-sanity">10</span>/<span id="player-max-sanity">10</span></div>
+                        <div class="stat-bar">
+                            <div class="stat-fill sanity-fill" id="player-sanity-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fighter-card">
+                    <h3 id="enemy-name">Enemy</h3>
+                    <div class="fighter-sprite" id="enemy-sprite">👾</div>
+                    <div class="stats">
+                        <div>HP: <span id="enemy-hp">100</span>/<span id="enemy-max-hp">100</span></div>
+                        <div class="stat-bar">
+                            <div class="stat-fill hp-fill" id="enemy-hp-bar"></div>
+                        </div>
+                        <div>Sanity: <span id="enemy-sanity">10</span>/<span id="enemy-max-sanity">10</span></div>
+                        <div class="stat-bar">
+                            <div class="stat-fill sanity-fill" id="enemy-sanity-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="move-buttons" id="move-buttons">
+                <button class="move-btn" data-move="light" id="btn-light">
+                    <span class="move-name">Scoop Slam</span>
+                    <div class="move-cost">Base Cost: 2 | Damage: 15</div>
+                    <div class="move-tooltip" id="tooltip-light"></div>
+                </button>
+                <button class="move-btn" data-move="heavy" id="btn-heavy">
+                    <span class="move-name">Sprinkle Blast</span>
+                    <div class="move-cost">Base Cost: 5 | Damage: 35</div>
+                    <div class="move-tooltip" id="tooltip-heavy"></div>
+                </button>
+                <button class="move-btn" data-move="defend" id="btn-defend">
+                    <span class="move-name">Ice Shield</span>
+                    <div class="move-cost">Base Cost: 1 | Block damage</div>
+                    <div class="move-tooltip" id="tooltip-defend"></div>
+                </button>
+                <button class="move-btn" data-move="boost" id="btn-boost">
+                    <span class="move-name">Sugar Rush</span>
+                    <div class="move-cost">Base Cost: 3 | +50% damage</div>
+                    <div class="move-tooltip" id="tooltip-boost"></div>
+                </button>
+                <button class="move-btn talk-btn" id="talk-btn">
+                    <span class="move-name">💬 Talk It Out</span>
+                    <div class="move-cost">Restore sanity through dialogue</div>
+                </button>
+            </div>
+
+            <div class="battle-log" id="battle-log" role="log" aria-live="polite"></div>
+        </div>
+
+        <!-- Training Screen -->
+        <div class="screen" id="training-screen">
+            <h2>Training Time!</h2>
+            <p>Click the ice cream cones for points! Higher = more points!</p>
+            <div class="training-combo">Combo: <span id="combo-counter">0</span>x</div>
+            <p>Score: <span id="training-score">0</span> | Time: <span id="training-timer">15</span>s</p>
+            <div class="training-target" id="training-target" role="button" tabindex="0"></div>
+            
+            <div id="training-choices">
+                <h3>Choose your training reward:</h3>
+                <p>Your score: <span id="final-score">0</span> points</p>
+                <button class="move-btn" data-training="attack">+3 Attack Power</button>
+                <button class="move-btn" data-training="defense">+3 Defense Power</button>
+                <button class="move-btn" data-training="sanity">+1 Max Sanity</button>
+                <button class="move-btn" id="bonus-reward" data-training="health">+10 Max HP (Score 50+)</button>
+            </div>
+
+            <div class="slot-machine">
+                <h3>🎰 Risky Slots 🎰</h3>
+                <p>Risk sanity for rewards! (Cost: <span id="slot-cost">1</span> Sanity)</p>
+                <div class="slot-reels">
+                    <div class="slot-reel" id="reel1">🍦</div>
+                    <div class="slot-reel" id="reel2">🍦</div>
+                    <div class="slot-reel" id="reel3">🍦</div>
+                </div>
+                <button class="move-btn" id="spin-btn">
+                    Spin! (-<span id="spin-cost">1</span> Sanity)
+                </button>
+                <div id="slot-result" role="status" aria-live="polite"></div>
+                <p class="slot-warning">Cost increases by 1 each spin!</p>
+            </div>
+
+            <button class="continue-btn" id="continue-training">Continue to Next Battle</button>
+        </div>
+
+        <!-- Talk-Down Screen -->
+        <div class="screen" id="talkdown-screen">
+            <h2>🌀 Sanity Crisis! 🌀</h2>
+            <p class="malfunction-text" id="malfunction-text">Your fighter is having a meltdown!</p>
+            <p>Choose the right words to calm them down:</p>
+            <div class="dialogue-options" id="dialogue-options"></div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div class="screen" id="game-over-screen">
+            <h1>Game Over</h1>
+            <p class="final-score">You reached Battle <span id="final-battle">1</span> of 5</p>
+            <p id="game-over-reason"></p>
+            <button class="continue-btn" id="restart-game">Try Again</button>
+        </div>
+
+        <!-- Victory Screen -->
+        <div class="screen" id="victory-screen">
+            <h1>🎉 Victory! 🎉</h1>
+            <p class="final-score">You conquered all 5 battles!</p>
+            <p>Your ice cream fighter is the ultimate champion!</p>
+            <button class="continue-btn" id="play-again">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Talk Dialog Modal -->
+    <div class="dialogue-screen" id="talk-dialog" role="dialog" aria-modal="true" aria-labelledby="talk-dialog-title">
+        <h3 id="talk-dialog-title">Your Fighter Says:</h3>
+        <p id="fighter-statement" role="status"></p>
+        <div class="dialogue-options" id="talk-options"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
