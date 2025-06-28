@@ -22,6 +22,33 @@ class Combat {
         this.updateTooltip(moveType);
       });
     });
+
+    // Tooltip toggle buttons
+    document.querySelectorAll(".tooltip-toggle").forEach((toggleBtn) => {
+      toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent triggering move button click
+        const tooltipId = e.currentTarget.dataset.target;
+        const tooltip = document.getElementById(tooltipId);
+
+        if (tooltip) {
+          // Close all other tooltips first
+          document.querySelectorAll(".move-tooltip").forEach((tip) => {
+            if (tip !== tooltip) {
+              tip.classList.remove("tooltip-open");
+            }
+          });
+
+          // Toggle current tooltip
+          tooltip.classList.toggle("tooltip-open");
+
+          // Update tooltip content if opening
+          if (tooltip.classList.contains("tooltip-open")) {
+            const moveType = tooltipId.replace("tooltip-", "");
+            this.updateTooltip(moveType);
+          }
+        }
+      });
+    });
   }
 
   /**
@@ -97,31 +124,48 @@ class Combat {
   }
 
   /**
-   * Update UI to show malfunction status
+   * Update UI to show malfunction status - FIXED: Complete icon restoration
    */
   updateMalfunctionUI() {
-    // Reset all buttons first
+    // STEP 1: Reset all buttons first - ensure complete cleanup
     document.querySelectorAll(".move-btn[data-move]").forEach((btn) => {
       const icon = btn.querySelector(".move-icon");
       if (icon) {
+        // Clear any malfunction styling
         icon.style.filter = "none";
+
+        // Restore original icon if it was changed
+        if (icon.dataset.originalSrc) {
+          icon.src = icon.dataset.originalSrc;
+          delete icon.dataset.originalSrc;
+        }
       }
+
+      // Clear malfunction class and re-enable
       btn.classList.remove("malfunctioning");
+      btn.disabled = false;
     });
 
-    // Apply malfunction to the selected move
+    // STEP 2: Apply malfunction to the selected move
     if (this.game.gameState.malfunctionedMove) {
       const btnId = `btn-${this.game.gameState.malfunctionedMove}`;
       const malfunctionBtn = document.getElementById(btnId);
+
       if (malfunctionBtn) {
         const icon = malfunctionBtn.querySelector(".move-icon");
+
         if (icon) {
-          // Replace with malfunction symbol - using existing image
-          const originalSrc = icon.src;
-          icon.dataset.originalSrc = originalSrc;
+          // Store original icon source BEFORE changing it
+          if (!icon.dataset.originalSrc) {
+            icon.dataset.originalSrc = icon.src;
+          }
+
+          // Apply malfunction icon and styling
           icon.src = "images/malfunction_effect.png";
           icon.style.filter = "hue-rotate(45deg) saturate(2)";
         }
+
+        // Apply malfunction class and disable button
         malfunctionBtn.classList.add("malfunctioning");
         malfunctionBtn.disabled = true;
       }
@@ -129,18 +173,30 @@ class Combat {
   }
 
   /**
-   * Reset malfunction at start of player turn
+   * Reset malfunction at start of player turn - FIXED: Ensure complete restoration
    */
   resetMalfunction() {
-    // Restore original icons
+    // Clear malfunction state
+    this.game.gameState.malfunctionedMove = null;
+
+    // Restore all buttons to normal state
     document.querySelectorAll(".move-btn[data-move]").forEach((btn) => {
       const icon = btn.querySelector(".move-icon");
-      if (icon && icon.dataset.originalSrc) {
-        icon.src = icon.dataset.originalSrc;
+
+      if (icon) {
+        // Restore original icon if it was stored
+        if (icon.dataset.originalSrc) {
+          icon.src = icon.dataset.originalSrc;
+          delete icon.dataset.originalSrc;
+        }
+
+        // Clear all malfunction styling
         icon.style.filter = "none";
-        delete icon.dataset.originalSrc;
       }
+
+      // Remove malfunction class and re-enable button
       btn.classList.remove("malfunctioning");
+      btn.disabled = false;
     });
   }
 
@@ -395,6 +451,25 @@ class Combat {
         );
         break;
 
+      case "heal":
+        // NEW: Heal implementation - restores 30% of max HP
+        const healAmount = Math.floor(this.game.gameState.player.maxHp * 0.3);
+        const oldHp = this.game.gameState.player.hp;
+        this.game.gameState.player.hp = Math.min(
+          this.game.gameState.player.hp + healAmount,
+          this.game.gameState.player.maxHp
+        );
+        const actualHealed = this.game.gameState.player.hp - oldHp;
+
+        this.game.addAnimationClass(playerSprite, "boost-animation"); // Reuse boost animation for healing glow
+        this.game.addBattleLog(
+          `${this.game.gameState.player.name} uses ${this.getPlayerMoveName(
+            moveType
+          )} and restores ${actualHealed} HP!`
+        );
+        this.game.showDamageNumber(playerSprite, actualHealed, true); // Show as heal number (green)
+        break;
+
       case "light":
       case "heavy":
         this.game.addAnimationClass(playerSprite, "attack-animation");
@@ -575,11 +650,7 @@ class Combat {
             this.game.addBattleLog(`You took ${finalDamage} damage!`);
             this.game.playSound("takeDamage");
 
-            if (this.game.gameState.playerBoost) {
-              this.game.gameState.playerBoost = false;
-              this.game.gameState.playerBoostTurns = 0;
-              this.game.addBattleLog("Your power up was interrupted!");
-            }
+            // REMOVED: Boost interruption - powerup should last full 3 turns regardless of taking damage
           } else {
             this.game.addBattleLog("Your defense blocked the attack!");
           }
@@ -667,7 +738,7 @@ class Combat {
     const move = MOVE_DEFINITIONS[moveType];
     const tooltip = document.getElementById(`tooltip-${moveType}`);
 
-    if (!tooltip || !this.game.gameState.enemy) return;
+    if (!tooltip) return;
 
     const moveName = this.getPlayerMoveName(moveType);
     let html = `<div><strong>${moveName}</strong></div>`;
@@ -676,7 +747,8 @@ class Combat {
     // Show damage calculation for attack moves
     if (
       (moveType === "light" || moveType === "heavy") &&
-      this.game.gameState.player
+      this.game.gameState.player &&
+      this.game.gameState.enemy
     ) {
       const baseDamage = move.damage;
       const playerAttack = this.game.gameState.player.attack;
@@ -699,6 +771,22 @@ class Combat {
         html += `<div style="color: #f5576c; font-weight: bold;">BOOSTED: ${finalDamage} damage! (${this.game.gameState.playerBoostTurns} turns left)</div>`;
       } else {
         html += `<div>${baseDamage} (base) + ${playerAttack} (attack) - ${enemyDefense} (enemy def) = ${finalDamage}</div>`;
+      }
+    }
+
+    // Show heal calculation for heal moves
+    if (moveType === "heal" && this.game.gameState.player) {
+      const healAmount = Math.floor(this.game.gameState.player.maxHp * 0.3);
+      const currentHp = this.game.gameState.player.hp;
+      const maxHp = this.game.gameState.player.maxHp;
+      const actualHeal = Math.min(healAmount, maxHp - currentHp);
+
+      html += `<div style="margin-top: 8px;"><strong>Healing Calculation:</strong></div>`;
+      html += `<div>30% of ${maxHp} Max HP = ${healAmount} HP restored</div>`;
+      if (actualHeal < healAmount) {
+        html += `<div style="color: #48dbfb; font-weight: bold;">Will heal ${actualHeal} HP (limited by current HP)</div>`;
+      } else {
+        html += `<div style="color: #48dbfb; font-weight: bold;">Will heal ${actualHeal} HP</div>`;
       }
     }
 

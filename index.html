@@ -172,6 +172,9 @@
                 Base Cost: 2 | Damage: 15
               </div>
             </div>
+            <button class="tooltip-toggle" data-target="tooltip-light">
+              ?
+            </button>
             <div class="move-tooltip" id="tooltip-light"></div>
           </button>
           <button class="move-btn" data-move="heavy" id="btn-heavy">
@@ -186,6 +189,9 @@
                 Base Cost: 5 | Damage: 35
               </div>
             </div>
+            <button class="tooltip-toggle" data-target="tooltip-heavy">
+              ?
+            </button>
             <div class="move-tooltip" id="tooltip-heavy"></div>
           </button>
           <!-- Defend Button - will be hidden for fighters without defend -->
@@ -200,6 +206,9 @@
               <span class="move-name" id="defend-move-name">Ice Shield</span>
               <div class="move-cost">Base Cost: 1 | Block damage</div>
             </div>
+            <button class="tooltip-toggle" data-target="tooltip-defend">
+              ?
+            </button>
             <div class="move-tooltip" id="tooltip-defend"></div>
           </button>
           <!-- Heal Button - will be shown for fighters with heal -->
@@ -214,6 +223,7 @@
               <span class="move-name" id="heal-move-name">Heal</span>
               <div class="move-cost">Base Cost: 3 | Restore 30% HP</div>
             </div>
+            <button class="tooltip-toggle" data-target="tooltip-heal">?</button>
             <div class="move-tooltip" id="tooltip-heal"></div>
           </button>
           <button class="move-btn" data-move="boost" id="btn-boost">
@@ -222,6 +232,9 @@
               <span class="move-name" id="boost-move-name">Sugar Rush</span>
               <div class="move-cost">Base Cost: 3 | +100% damage</div>
             </div>
+            <button class="tooltip-toggle" data-target="tooltip-boost">
+              ?
+            </button>
             <div class="move-tooltip" id="tooltip-boost"></div>
           </button>
         </div>
@@ -241,6 +254,43 @@
           Click the floating bubbles for points! Different sizes = different
           points! Don't click the background!
         </p>
+
+        <!-- Player Stats Display -->
+        <div
+          class="player-stats-display"
+          id="player-stats-display"
+          style="display: none"
+        >
+          <h3>Your Fighter Stats</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-label">HP</div>
+              <div class="stat-value">
+                <span id="training-current-hp">100</span>/<span
+                  id="training-max-hp"
+                  >100</span
+                >
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Attack</div>
+              <div class="stat-value" id="training-attack">15</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Defense</div>
+              <div class="stat-value" id="training-defense">10</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Sanity</div>
+              <div class="stat-value">
+                <span id="training-current-sanity">12</span>/<span
+                  id="training-max-sanity"
+                  >12</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Training Game Elements - Hidden by default -->
         <div class="training-combo" id="training-combo">
@@ -337,9 +387,14 @@
               <div class="slot-btn-text">
                 <span id="spin-cost">1</span> Points
               </div>
+              <img
+                src="images/slot_spin_icon.png"
+                alt="Spin"
+                class="move-icon"
+              />
             </button>
             <div id="slot-result" role="status" aria-live="polite"></div>
-            <p class="slot-warning">Cost increases by 1 point each spin!</p>
+            <p class="slot-warning">Cost increases by 15 points each spin!</p>
             <p class="slot-note">
               <strong>Need 3 matching symbols to win!</strong>
             </p>

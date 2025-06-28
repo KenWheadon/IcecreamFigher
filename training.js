@@ -61,6 +61,72 @@ class Training {
   }
 
   /**
+   * Update player stats display on training screen
+   */
+  updateStatsDisplay() {
+    const player = this.game.gameState.player;
+    if (!player) return;
+
+    // Update all stat elements
+    this.game.updateElement("training-current-hp", player.hp.toString());
+    this.game.updateElement("training-max-hp", player.maxHp.toString());
+    this.game.updateElement("training-attack", player.attack.toString());
+    this.game.updateElement("training-defense", player.defense.toString());
+    this.game.updateElement(
+      "training-current-sanity",
+      player.sanity.toString()
+    );
+    this.game.updateElement("training-max-sanity", player.maxSanity.toString());
+  }
+
+  /**
+   * Show stats display during training rewards phase
+   */
+  showStatsDisplay() {
+    const statsDisplay = document.getElementById("player-stats-display");
+    if (statsDisplay) {
+      statsDisplay.classList.add("active");
+      statsDisplay.style.display = "block";
+      this.updateStatsDisplay();
+    }
+  }
+
+  /**
+   * Hide stats display during mini-game phase
+   */
+  hideStatsDisplay() {
+    const statsDisplay = document.getElementById("player-stats-display");
+    if (statsDisplay) {
+      statsDisplay.classList.remove("active");
+      statsDisplay.style.display = "none";
+    }
+  }
+
+  /**
+   * Add visual feedback when a stat is updated
+   */
+  highlightUpdatedStat(statType) {
+    const statItemMap = {
+      hp: ".stat-item:nth-child(1)",
+      health: ".stat-item:nth-child(1)", // Same as hp
+      attack: ".stat-item:nth-child(2)",
+      defense: ".stat-item:nth-child(3)",
+      sanity: ".stat-item:nth-child(4)",
+    };
+
+    const selector = statItemMap[statType];
+    if (selector) {
+      const statItem = document.querySelector(selector);
+      if (statItem) {
+        statItem.classList.add("stat-updated");
+        setTimeout(() => {
+          statItem.classList.remove("stat-updated");
+        }, 1000);
+      }
+    }
+  }
+
+  /**
    * Start training phase with restored original mechanics
    */
   startTraining() {
@@ -125,6 +191,9 @@ class Training {
         continueBtn.style.display = "none";
       }
 
+      // Hide stats display during mini-game
+      this.hideStatsDisplay();
+
       // Show mini-game instructions
       this.showTrainingPhaseUI("mini-game");
 
@@ -146,7 +215,7 @@ class Training {
     switch (phase) {
       case "mini-game":
         instructions.textContent =
-          "Click the ice cream cones for points! Higher = more points! Combo = total clicked!";
+          "Click the treats for points! Combo = total clicked!";
         break;
       case "rewards":
         instructions.textContent =
@@ -420,6 +489,9 @@ class Training {
       slotPaytable.classList.add("active");
     }
 
+    // Show stats display during rewards phase
+    this.showStatsDisplay();
+
     // Show final score and update UI
     this.game.updateElement(
       "final-score",
@@ -537,6 +609,10 @@ class Training {
         `Training complete! ${reward.name}! (Cost: ${cost} points)`
       );
       this.game.playSound("upgradeApply");
+
+      // Update stats display and highlight the changed stat
+      this.updateStatsDisplay();
+      this.highlightUpdatedStat(rewardType);
 
       // Check for achievement unlocks
       this.checkTrainingAchievements(rewardType, preUpgradeStats);
@@ -867,15 +943,21 @@ class Training {
           slotMessage.innerHTML = `<span style="color: ${reward.color}; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">🎉 YOU WON! 🎉</span>`;
 
           // Apply the reward
-          if (reward.attack) this.game.gameState.player.attack += reward.attack;
-          if (reward.defense)
+          if (reward.attack) {
+            this.game.gameState.player.attack += reward.attack;
+            this.highlightUpdatedStat("attack");
+          }
+          if (reward.defense) {
             this.game.gameState.player.defense += reward.defense;
+            this.highlightUpdatedStat("defense");
+          }
           if (reward.hp) {
             this.game.gameState.player.maxHp += reward.hp;
             this.game.gameState.player.hp = Math.min(
               this.game.gameState.player.hp + reward.hp,
               this.game.gameState.player.maxHp
             );
+            this.highlightUpdatedStat("hp");
           }
           if (reward.sanity) {
             this.game.gameState.player.maxSanity += reward.sanity;
@@ -883,6 +965,7 @@ class Training {
               this.game.gameState.player.sanity + reward.sanity,
               this.game.gameState.player.maxSanity
             );
+            this.highlightUpdatedStat("sanity");
           }
           if (reward.points) {
             this.game.gameState.trainingScore += reward.points;
@@ -891,6 +974,9 @@ class Training {
               this.game.gameState.trainingScore.toString()
             );
           }
+
+          // Update stats display after slot win
+          this.updateStatsDisplay();
 
           resultElement.innerHTML = `<span style="color: ${reward.color};">🎉 ${reward.name}</span>`;
           this.game.playSound(symbolName === "ice" ? "jackpot" : "win");

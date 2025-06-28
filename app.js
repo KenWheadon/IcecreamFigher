@@ -253,18 +253,6 @@ class IceCreamFighter {
         font-family: inherit;
         margin: 0 10px;
       ">Play Again</button>
-      <button id="victory-close" style="
-        background: rgba(255,255,255,0.1);
-        border: 2px solid white;
-        color: white;
-        padding: 15px 30px;
-        border-radius: 15px;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        font-family: inherit;
-        margin: 0 10px;
-      ">Close</button>
     `;
 
     // Add animation CSS
@@ -287,19 +275,10 @@ class IceCreamFighter {
 
     // Add click handlers
     const playAgainButton = document.getElementById("victory-play-again");
-    const closeButton = document.getElementById("victory-close");
 
     playAgainButton.addEventListener("click", () => {
       this.playSound("buttonClick");
       location.reload();
-    });
-
-    closeButton.addEventListener("click", () => {
-      this.playSound("buttonClick");
-      popup.remove();
-      style.remove();
-      // Return to fighter selection
-      this.showScreen("fighter-select-screen");
     });
 
     this.playSound("victorySound");

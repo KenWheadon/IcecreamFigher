@@ -170,6 +170,90 @@ h3 {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* Player Stats Display for Training Screen */
+.player-stats-display {
+  background: var(--card-background);
+  border-radius: var(--border-radius);
+  padding: 15px;
+  margin: 20px 0;
+  text-align: center;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.player-stats-display.active {
+  display: block !important;
+}
+
+.player-stats-display h3 {
+  margin: 0 0 15px 0;
+  color: #48dbfb;
+  text-shadow: var(--text-shadow);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-small);
+  padding: 10px;
+  text-align: center;
+  transition: all var(--transition-normal);
+}
+
+.stat-item.stat-updated {
+  background: rgba(72, 219, 251, 0.3);
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(72, 219, 251, 0.5);
+  animation: statUpdate 0.8s ease-in-out;
+}
+
+@keyframes statUpdate {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.stat-label {
+  font-size: var(--font-size-small);
+  color: #ddd;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.stat-value {
+  font-size: var(--font-size-large);
+  color: white;
+  font-weight: bold;
+  text-shadow: var(--text-shadow);
+}
+
+/* Fighter stats styling */
+.fighter-stats {
+  margin-top: 10px;
+  font-size: 14px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 3px 0;
+  font-weight: bold;
+}
+
 /* Animations */
 .attack-animation {
   animation: attackShake 0.5s ease-out;
@@ -355,6 +439,38 @@ h3 {
   align-items: center;
 }
 
+/* Tooltip Toggle Button (? button) */
+.tooltip-toggle {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  z-index: 100;
+  font-family: Arial, sans-serif;
+}
+
+.tooltip-toggle:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+.tooltip-toggle:focus {
+  outline: 2px solid #48dbfb;
+  outline-offset: 1px;
+}
+
 /* Malfunction styles for move buttons */
 .move-btn.malfunctioning {
   background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
@@ -415,16 +531,21 @@ h3 {
 }
 
 .slot-machine-container .move-btn img {
-  height: 80%;
-  width: 40%;
+  height: auto;
+  width: 22%;
 }
 
 .slot-btn-text {
-  width: 55%;
+  width: 48%;
+  font-weight: 900;
+  font-size: 2rem;
 }
 
 #spin-btn {
   width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #training-instructions {
@@ -459,10 +580,10 @@ h3 {
   vertical-align: middle;
 }
 
-/* Tooltips - UPDATED: Position below buttons */
+/* Tooltips - UPDATED: Click-based toggle instead of hover */
 .move-tooltip {
   position: absolute;
-  top: 100%; /* Changed from bottom: 100% to top: 100% */
+  bottom: 100%; /* Position above buttons */
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.9);
@@ -472,15 +593,24 @@ h3 {
   font-size: var(--font-size-small);
   white-space: nowrap;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity var(--transition-normal);
-  z-index: 10;
+  transition: opacity var(--transition-normal),
+    visibility var(--transition-normal);
+  z-index: 1000; /* High z-index to appear above all other elements */
   min-width: 200px;
-  margin-top: 5px; /* Added margin to separate from button */
+  margin-bottom: 5px;
 }
 
-.move-btn:hover .move-tooltip {
+/* Show tooltip when toggled open */
+.move-tooltip.tooltip-open {
   opacity: 1;
+  visibility: visible;
+}
+
+/* Remove old hover behavior */
+.move-btn:hover .move-tooltip {
+  /* Removed hover behavior - now controlled by click */
 }
 
 .tooltip-row {
@@ -943,10 +1073,9 @@ h3 {
 }
 
 .screen-image {
-  width: 150px;
-  height: 150px;
+  width: 100%;
+  height: auto;
   object-fit: contain;
-  margin: 20px auto;
   display: block;
 }
 
@@ -990,23 +1119,6 @@ h3 {
 
 #victory-screen h1 {
   color: #48dbfb;
-}
-
-/* Fighter stats styling */
-.fighter-stats {
-  margin-top: 10px;
-  font-size: 14px;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  margin: 3px 0;
-  font-weight: bold;
 }
 
 #training-btns {
@@ -1232,10 +1344,21 @@ h3 {
     position: static;
     transform: none;
     opacity: 1;
+    visibility: visible;
     background: transparent;
     color: rgba(255, 255, 255, 0.8);
     padding: 5px 0;
-    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+
+  /* Keep tooltip toggle buttons visible on mobile */
+  .tooltip-toggle {
+    display: flex;
+  }
+
+  /* Mobile stats grid */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1266,5 +1389,23 @@ h3 {
 
   .paytable-row .reward {
     font-size: 11px;
+  }
+
+  /* Mobile stats display adjustments */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-item {
+    padding: 8px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .stat-value {
+    font-size: 14px;
   }
 }
