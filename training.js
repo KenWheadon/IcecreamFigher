@@ -42,33 +42,25 @@ class Training {
       });
     }
 
-    // Enhanced training target for bubble clicking
+    // Training target for cone clicking (restored original)
     const trainingTarget = document.getElementById("training-target");
     if (trainingTarget) {
-      // Click on bubbles
       trainingTarget.addEventListener("click", (e) => {
-        const bubbleElement = e.target.closest(".moving-bubble");
-        if (bubbleElement) {
-          const bubbleId = parseInt(bubbleElement.dataset.bubbleId);
-          const bubble = this.activeBubbles.find((b) => b.id === bubbleId);
-          if (bubble) {
-            this.collectBubble(bubbleElement, bubble);
-          }
+        const coneElement = e.target.closest(".moving-cone");
+        if (coneElement) {
+          const points = parseInt(coneElement.dataset.points) || 1;
+          this.game.playSound("bubbleClick");
+          this.collectCone(coneElement, points);
         } else {
           // Clicked on background - reset combo
           this.resetCombo();
         }
       });
-
-      // Prevent context menu on right click
-      trainingTarget.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-      });
     }
   }
 
   /**
-   * Start training phase with enhanced bubble system
+   * Start training phase with restored original mechanics
    */
   startTraining() {
     try {
@@ -136,7 +128,7 @@ class Training {
       this.showTrainingPhaseUI("mini-game");
 
       this.game.playSound("trainingStart");
-      this.startBubbleSpawning();
+      this.spawnTrainingCones();
       this.startTrainingTimer();
     } catch (error) {
       console.error("Failed to start training:", error);
@@ -153,7 +145,7 @@ class Training {
     switch (phase) {
       case "mini-game":
         instructions.textContent =
-          "Click the floating bubbles for points! Different sizes = different points! Don't click the background!";
+          "Click the ice cream cones for points! Higher = more points! Don't click the background!";
         break;
       case "rewards":
         instructions.textContent =
@@ -179,132 +171,102 @@ class Training {
   }
 
   /**
-   * Start bubble spawning system
+   * Spawn training cones (restored original system with more cones)
    */
-  startBubbleSpawning() {
+  spawnTrainingCones() {
     if (!this.game.gameState.trainingActive) return;
-
-    this.spawnBubble();
-
-    // Schedule next spawn
-    const spawnDelay = Math.max(
-      GAME_CONFIG.TRAINING_SPAWN_MIN_DELAY,
-      GAME_CONFIG.TRAINING_SPAWN_BASE_DELAY -
-        this.game.gameState.trainingScore * 2
-    );
-
-    setTimeout(() => this.startBubbleSpawning(), spawnDelay);
-  }
-
-  /**
-   * Spawn a single bubble
-   */
-  spawnBubble() {
-    if (!this.game.gameState.trainingActive) return;
-    if (this.activeBubbles.length >= GAME_CONFIG.MAX_SIMULTANEOUS_BUBBLES)
-      return;
 
     try {
       const target = document.getElementById("training-target");
       if (!target) return;
 
-      const bubbleType = CONFIG_UTILS.getWeightedBubbleType();
-      const bubble = document.createElement("div");
+      // Spawn multiple cones if we're under the limit
+      const currentCones = target.querySelectorAll(".moving-cone").length;
+      const maxCones = GAME_CONFIG.MAX_SIMULTANEOUS_BUBBLES || 5;
 
-      const bubbleId = this.bubbleIdCounter++;
-      bubble.className = `moving-bubble size-${bubbleType.size} type-${bubbleType.type}`;
-      bubble.dataset.bubbleId = bubbleId;
-      bubble.dataset.points = bubbleType.basePoints.toString();
-      bubble.dataset.type = bubbleType.type;
+      if (currentCones < maxCones) {
+        const cone = document.createElement("div");
+        cone.className = "moving-cone";
 
-      // Set bubble content
-      bubble.textContent = bubbleType.emoji;
+        const coneData = CONFIG_UTILS.getRandomTrainingCone();
+        if (coneData.image) {
+          const img = document.createElement("img");
+          img.src = coneData.image;
+          img.alt = "Training Cone";
+          img.className = "cone-image";
+          img.style.pointerEvents = "none";
+          cone.appendChild(img);
+        } else {
+          cone.textContent = coneData.emoji;
+        }
 
-      // Set bubble style based on type
-      bubble.style.background = `radial-gradient(circle, ${
-        bubbleType.color
-      }, ${bubbleType.color.replace("0.8", "0.4")})`;
-      bubble.style.borderColor = bubbleType.color;
-      bubble.style.boxShadow = `0 0 15px ${bubbleType.color.replace(
-        "0.8",
-        "0.5"
-      )}`;
+        const x = Math.random() * (target.offsetWidth - 60);
+        cone.style.left = x + "px";
+        cone.style.bottom = "0px";
 
-      // Position bubble randomly
-      const maxX = target.offsetWidth - 80;
-      const maxY = target.offsetHeight - 80;
-      const x = Math.random() * maxX;
-      const y = Math.random() * maxY;
+        const maxHeight = target.offsetHeight - 60;
+        const targetHeight = Math.random() * maxHeight;
+        const points = Math.floor((targetHeight / maxHeight) * 5) + 1;
 
-      bubble.style.left = x + "px";
-      bubble.style.top = y + "px";
+        cone.dataset.points = points.toString();
+        cone.dataset.height = targetHeight.toString();
 
-      // Add to active bubbles tracking
-      const bubbleData = {
-        id: bubbleId,
-        element: bubble,
-        type: bubbleType.type,
-        points: bubbleType.basePoints,
-        spawnTime: Date.now(),
-      };
-      this.activeBubbles.push(bubbleData);
+        target.appendChild(cone);
 
-      target.appendChild(bubble);
+        // Animate cone upward
+        setTimeout(() => {
+          cone.style.bottom = targetHeight + "px";
+        }, 50);
 
-      // Remove bubble after lifetime expires
-      setTimeout(() => {
-        this.removeBubble(bubbleId);
-      }, GAME_CONFIG.TRAINING_BUBBLE_LIFETIME);
-    } catch (error) {
-      console.error("Failed to spawn bubble:", error);
-    }
-  }
-
-  /**
-   * Remove a bubble from the game
-   */
-  removeBubble(bubbleId) {
-    const bubbleIndex = this.activeBubbles.findIndex((b) => b.id === bubbleId);
-    if (bubbleIndex !== -1) {
-      const bubble = this.activeBubbles[bubbleIndex];
-      if (bubble.element && bubble.element.parentNode) {
-        bubble.element.remove();
+        // Remove cone after timeout
+        setTimeout(() => {
+          if (cone.parentNode) {
+            cone.remove();
+            if (this.game.gameState.trainingCombo > 0) {
+              this.game.gameState.trainingCombo = 0;
+              this.game.updateElement("combo-counter", "0");
+            }
+          }
+        }, GAME_CONFIG.TRAINING_BUBBLE_LIFETIME);
       }
-      this.activeBubbles.splice(bubbleIndex, 1);
+
+      // Schedule next cone
+      const spawnDelay = Math.max(
+        GAME_CONFIG.TRAINING_SPAWN_MIN_DELAY,
+        GAME_CONFIG.TRAINING_SPAWN_BASE_DELAY -
+          this.game.gameState.trainingScore * 10
+      );
+      setTimeout(() => this.spawnTrainingCones(), spawnDelay);
+    } catch (error) {
+      console.error("Failed to spawn training cone:", error);
     }
   }
 
   /**
-   * Collect a bubble when clicked
+   * Collect a training cone (restored original with combo reset)
    */
-  collectBubble(bubbleElement, bubbleData) {
+  collectCone(cone, points) {
     try {
-      // Increase combo
       this.game.gameState.trainingCombo++;
       const comboMultiplier = Math.min(
         this.game.gameState.trainingCombo,
         GAME_CONFIG.MAX_COMBO_MULTIPLIER
       );
-      const totalPoints = bubbleData.points * comboMultiplier;
+      const totalPoints = points * comboMultiplier;
       this.game.gameState.trainingScore += totalPoints;
 
-      // Play sound effects
-      this.game.playSound("bubbleClick");
       if (this.game.gameState.trainingCombo > 1) {
         this.game.playSound("comboIncrease");
       }
 
-      // Add bubble pop animation
-      bubbleElement.classList.add("bubble-pop");
-
-      // Show score popup
+      // Show score popup (restored original)
       const target = document.getElementById("training-target");
       if (target) {
         const scoreFloat = document.createElement("div");
-        scoreFloat.className = "bubble-score";
+        scoreFloat.className = "cone-score";
         scoreFloat.textContent = "+" + totalPoints;
-        scoreFloat.style.left = bubbleElement.style.left;
-        scoreFloat.style.top = bubbleElement.style.top;
+        scoreFloat.style.left = cone.style.left;
+        scoreFloat.style.bottom = cone.dataset.height + "px";
         target.appendChild(scoreFloat);
 
         setTimeout(() => {
@@ -314,7 +276,6 @@ class Training {
         }, 1000);
       }
 
-      // Update UI
       this.game.updateElement(
         "training-score",
         this.game.gameState.trainingScore.toString()
@@ -324,19 +285,9 @@ class Training {
         this.game.gameState.trainingCombo.toString()
       );
 
-      // Add combo flash animation
-      const comboElement = document.getElementById("combo-counter");
-      if (comboElement && this.game.gameState.trainingCombo > 1) {
-        comboElement.parentElement.classList.add("combo-flash");
-        setTimeout(() => {
-          comboElement.parentElement.classList.remove("combo-flash");
-        }, 500);
-      }
-
-      // Remove bubble from active list and DOM
-      this.removeBubble(bubbleData.id);
+      cone.remove();
     } catch (error) {
-      console.error("Failed to collect bubble:", error);
+      console.error("Failed to collect cone:", error);
     }
   }
 
@@ -370,18 +321,11 @@ class Training {
       this.game.timers.training = null;
     }
 
-    // Clear all active bubbles
-    this.activeBubbles.forEach((bubble) => {
-      if (bubble.element && bubble.element.parentNode) {
-        bubble.element.remove();
-      }
-    });
-    this.activeBubbles = [];
-
-    // Hide the mini-game elements
+    // Clear all active cones
     const target = document.getElementById("training-target");
     if (target) {
-      target.innerHTML = "";
+      const cones = target.querySelectorAll(".moving-cone");
+      cones.forEach((cone) => cone.remove());
       target.style.display = "none";
     }
 
@@ -457,14 +401,21 @@ class Training {
               bonusReward.classList.add("available");
             }
             bonusReward.innerHTML = `
-              <div style="font-size: 32px;">${reward.icon}</div>
+              <img src="images/upgrade_health.png" alt="Health Upgrade" class="upgrade-icon" />
               <div class="btn-text">${reward.name} (${cost} pts)</div>
             `;
             bonusReward.disabled = !canAfford;
           }
         } else {
+          // Map reward types to their image files
+          const imageMap = {
+            attack: "images/upgrade_attack.png",
+            defense: "images/upgrade_defense.png",
+            sanity: "images/upgrade_sanity.png",
+          };
+
           btn.innerHTML = `
-            <div style="font-size: 32px;">${reward.icon}</div>
+            <img src="${imageMap[rewardType]}" alt="${reward.name}" class="upgrade-icon" />
             <div class="btn-text">${reward.name} (${cost} pts)</div>
           `;
           btn.disabled = !canAfford;
@@ -712,6 +663,8 @@ class Training {
         CONFIG_UTILS.getWeightedSlotSymbol(),
       ];
 
+      console.log("Slot results generated:", results);
+
       // Animate reels
       const reels = ["reel1", "reel2", "reel3"];
       reels.forEach((reelId, index) => {
@@ -725,17 +678,32 @@ class Training {
           const randomSymbol = CONFIG_UTILS.getRandomElement(
             SLOT_CONFIG.symbols
           );
-          const reelContent = reel.querySelector("div");
+          const reelContent =
+            reel.querySelector("img") || reel.querySelector("div");
           if (reelContent && randomSymbol) {
-            reelContent.textContent = randomSymbol.emoji;
+            if (reelContent.tagName === "IMG") {
+              // Update image source if using images
+              reelContent.src = `images/slot_${randomSymbol.name}.png`;
+              reelContent.alt = randomSymbol.name;
+            } else {
+              // Update emoji if using text
+              reelContent.textContent = randomSymbol.emoji;
+            }
           }
           spins++;
 
           if (spins > GAME_CONFIG.SLOT_SPIN_COUNT_BASE + index * 5) {
             clearInterval(spinInterval);
             reel.classList.remove("spinning");
+
+            // Set final result
             if (reelContent && results[index]) {
-              reelContent.textContent = results[index].emoji;
+              if (reelContent.tagName === "IMG") {
+                reelContent.src = `images/slot_${results[index].name}.png`;
+                reelContent.alt = results[index].name;
+              } else {
+                reelContent.textContent = results[index].emoji;
+              }
             }
 
             if (index === 2) {
@@ -759,14 +727,38 @@ class Training {
     if (!resultElement) return;
 
     try {
+      console.log("Checking slot results:", results);
+      console.log(
+        "Result names:",
+        results.map((r) => r.name)
+      );
+      console.log(
+        "Result emojis:",
+        results.map((r) => r.emoji)
+      );
+
+      // Check for exactly 3 matching symbols by name
       const isWin =
         results[0].name === results[1].name &&
         results[1].name === results[2].name;
+      console.log("Is win?", isWin);
+      console.log(
+        "Comparison:",
+        results[0].name,
+        "===",
+        results[1].name,
+        "===",
+        results[2].name
+      );
 
       // Track consecutive losses for achievement
       if (!isWin) {
         this.game.gameState.slotConsecutiveLosses =
           (this.game.gameState.slotConsecutiveLosses || 0) + 1;
+        console.log(
+          "Consecutive losses:",
+          this.game.gameState.slotConsecutiveLosses
+        );
         if (this.game.gameState.slotConsecutiveLosses >= 3) {
           this.game.unlockAchievement("slot_unlucky");
         }
@@ -796,6 +788,7 @@ class Training {
       if (isWin) {
         const symbolName = results[0].name;
         const reward = SLOT_CONFIG.rewards.triple[symbolName];
+        console.log("Win! Symbol:", symbolName, "Reward:", reward);
 
         if (reward) {
           // Unlock slot achievement

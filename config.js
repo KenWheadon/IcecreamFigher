@@ -25,6 +25,7 @@ const FIGHTER_TEMPLATES = {
   vanilla: {
     name: "Vanilla",
     sprite: "🍦",
+    image: "images/vanilla_fighter.png",
     hp: 100,
     maxHp: 100,
     attack: 15,
@@ -57,6 +58,7 @@ const FIGHTER_TEMPLATES = {
   chocolate: {
     name: "Chocolate",
     sprite: "🍫",
+    image: "images/chocolate_fighter.png",
     hp: 90,
     maxHp: 90,
     attack: 22, // Higher attack for glass cannon
@@ -89,6 +91,7 @@ const FIGHTER_TEMPLATES = {
   strawberry: {
     name: "Strawberry",
     sprite: "🍓",
+    image: "images/strawberry_fighter.png",
     hp: 120, // Higher HP for tank
     maxHp: 120,
     attack: 12,
@@ -121,6 +124,7 @@ const ENEMY_TEMPLATES = [
   {
     name: "Melty Mike",
     sprite: "🌊",
+    image: "images/enemy_1.png",
     hp: 80, // Increased for balance
     maxHp: 80,
     attack: 14, // Slightly increased
@@ -132,6 +136,7 @@ const ENEMY_TEMPLATES = [
   {
     name: "Freezer Burn Fred",
     sprite: "❄️",
+    image: "images/enemy_2.png",
     hp: 110, // Increased
     maxHp: 110,
     attack: 18, // Increased
@@ -143,6 +148,7 @@ const ENEMY_TEMPLATES = [
   {
     name: "Sour Sam",
     sprite: "🍋",
+    image: "images/enemy_3.png",
     hp: 140, // Increased
     maxHp: 140,
     attack: 22, // Increased
@@ -154,6 +160,7 @@ const ENEMY_TEMPLATES = [
   {
     name: "Rocky Road Roger",
     sprite: "🗿",
+    image: "images/enemy_4.png",
     hp: 180, // Increased
     maxHp: 180,
     attack: 26, // Increased
@@ -165,6 +172,7 @@ const ENEMY_TEMPLATES = [
   {
     name: "Brain Freeze Boss",
     sprite: "🧠",
+    image: "images/enemy_5.png",
     hp: 250, // Significantly increased for final boss
     maxHp: 250,
     attack: 32, // Increased
@@ -290,15 +298,15 @@ const TALKDOWN_OPTIONS = [
 // Enhanced Slot machine configuration with better rewards
 const SLOT_CONFIG = {
   symbols: [
-    { emoji: "🍦", name: "vanilla" },
-    { emoji: "🍫", name: "chocolate" },
-    { emoji: "🍓", name: "strawberry" },
-    { emoji: "🍨", name: "soft" },
-    { emoji: "🧊", name: "ice" },
-    { emoji: "🪙", name: "coin" },
+    { emoji: "🍦", name: "vanilla", image: "images/slot_vanilla.png" },
+    { emoji: "🍫", name: "chocolate", image: "images/slot_chocolate.png" },
+    { emoji: "🍓", name: "strawberry", image: "images/slot_strawberry.png" },
+    { emoji: "🍨", name: "soft", image: "images/slot_soft.png" },
+    { emoji: "🧊", name: "ice", image: "images/slot_ice.png" },
+    { emoji: "🪙", name: "coin", image: "images/slot_coin.png" },
   ],
   // Adjusted weights for better win rate (~65%)
-  weights: [120, 100, 80, 60, 20, 10],
+  weights: [100, 80, 60, 40, 20, 10],
   rewards: {
     triple: {
       vanilla: { name: "VANILLA VICTORY!", attack: 3, color: "#f5e6d3" },
@@ -323,7 +331,7 @@ const TRAINING_REWARDS = {
   attack: {
     name: "+5 Attack",
     description: "Increase your attack power significantly",
-    icon: "⚔️",
+    icon: "images/upgrade_attack.png",
     apply: (player) => {
       player.attack += 5; // Increased from 3
     },
@@ -331,7 +339,7 @@ const TRAINING_REWARDS = {
   defense: {
     name: "+5 Defense",
     description: "Increase your defense power significantly",
-    icon: "🛡️",
+    icon: "images/upgrade_defense.png",
     apply: (player) => {
       player.defense += 5; // Increased from 3
     },
@@ -339,7 +347,7 @@ const TRAINING_REWARDS = {
   sanity: {
     name: "+2 Max Sanity",
     description: "Increase your maximum sanity",
-    icon: "🧠",
+    icon: "images/upgrade_sanity.png",
     apply: (player) => {
       player.maxSanity += 2; // Increased from 1
       player.sanity = Math.min(player.sanity + 2, player.maxSanity);
@@ -348,7 +356,7 @@ const TRAINING_REWARDS = {
   health: {
     name: "+25 Max HP",
     description: "Increase your maximum health significantly",
-    icon: "❤️",
+    icon: "images/upgrade_health.png",
     apply: (player) => {
       player.maxHp += 25; // Increased from 10
       player.hp = Math.min(player.hp + 25, player.maxHp);
@@ -361,6 +369,7 @@ const BUBBLE_TYPES = [
   {
     type: "vanilla",
     emoji: "🍦",
+    image: "images/cone_vanilla.png",
     basePoints: 1,
     size: "small",
     color: "rgba(255,248,220,0.8)",
@@ -369,6 +378,7 @@ const BUBBLE_TYPES = [
   {
     type: "chocolate",
     emoji: "🍫",
+    image: "images/cone_chocolate.png",
     basePoints: 2,
     size: "medium",
     color: "rgba(139,69,19,0.8)",
@@ -377,6 +387,7 @@ const BUBBLE_TYPES = [
   {
     type: "strawberry",
     emoji: "🍓",
+    image: "images/cone_strawberry.png",
     basePoints: 3,
     size: "medium",
     color: "rgba(255,105,180,0.8)",
@@ -385,6 +396,7 @@ const BUBBLE_TYPES = [
   {
     type: "special",
     emoji: "🌟",
+    image: "images/cone_special.png",
     basePoints: 5,
     size: "large",
     color: "rgba(255,215,0,0.8)",
@@ -393,11 +405,21 @@ const BUBBLE_TYPES = [
   {
     type: "bonus",
     emoji: "💎",
+    image: "images/cone_bonus.png",
     basePoints: 10,
     size: "large",
     color: "rgba(72,219,251,0.8)",
     weight: 2, // Very rare
   },
+];
+
+// Training cone images and data (fallback for compatibility)
+const TRAINING_CONES = [
+  { emoji: "🍦", image: "images/cone_vanilla.png" },
+  { emoji: "🍨", image: "images/cone_special.png" },
+  { emoji: "🍧", image: "images/cone_strawberry.png" },
+  { emoji: "🍋", image: "images/cone_chocolate.png" },
+  { emoji: "💎", image: "images/cone_bonus.png" },
 ];
 
 // Achievement system configuration
@@ -668,6 +690,13 @@ const CONFIG_UTILS = {
   },
 
   /**
+   * Get a random training cone
+   */
+  getRandomTrainingCone() {
+    return this.getRandomElement(TRAINING_CONES);
+  },
+
+  /**
    * Validate fighter type
    */
   isValidFighterType(fighterType) {
@@ -789,6 +818,7 @@ if (typeof module !== "undefined" && module.exports) {
     TALK_RESPONSES,
     MALFUNCTION_MESSAGES,
     TALKDOWN_OPTIONS,
+    TRAINING_CONES,
     BUBBLE_TYPES,
     SLOT_CONFIG,
     TRAINING_REWARDS,

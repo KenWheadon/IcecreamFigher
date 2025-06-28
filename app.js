@@ -297,7 +297,7 @@ class IceCreamFighter {
     const fighter = FIGHTER_TEMPLATES[this.gameState.selectedFighterType];
     if (!fighter || !fighter.moves) return;
 
-    // Update move button names
+    // Update move button names ONLY - keep the existing images
     const lightName = document.getElementById("light-move-name");
     const heavyName = document.getElementById("heavy-move-name");
     const defendName = document.getElementById("defend-move-name");
@@ -308,40 +308,8 @@ class IceCreamFighter {
     if (defendName) defendName.textContent = fighter.moves.defend.name;
     if (boostName) boostName.textContent = fighter.moves.boost.name;
 
-    // Update move button icons/emojis
-    const lightBtn = document.getElementById("btn-light");
-    const heavyBtn = document.getElementById("btn-heavy");
-    const defendBtn = document.getElementById("btn-defend");
-    const boostBtn = document.getElementById("btn-boost");
-
-    if (lightBtn) {
-      const icon =
-        lightBtn.querySelector("img") || lightBtn.querySelector("div");
-      if (icon && icon.tagName === "DIV") {
-        icon.textContent = fighter.moves.light.icon;
-      }
-    }
-    if (heavyBtn) {
-      const icon =
-        heavyBtn.querySelector("img") || heavyBtn.querySelector("div");
-      if (icon && icon.tagName === "DIV") {
-        icon.textContent = fighter.moves.heavy.icon;
-      }
-    }
-    if (defendBtn) {
-      const icon =
-        defendBtn.querySelector("img") || defendBtn.querySelector("div");
-      if (icon && icon.tagName === "DIV") {
-        icon.textContent = fighter.moves.defend.icon;
-      }
-    }
-    if (boostBtn) {
-      const icon =
-        boostBtn.querySelector("img") || boostBtn.querySelector("div");
-      if (icon && icon.tagName === "DIV") {
-        icon.textContent = fighter.moves.boost.icon;
-      }
-    }
+    // DO NOT UPDATE ICONS - Keep the existing image icons in the HTML
+    // The <img> tags should remain unchanged
   }
 
   /**

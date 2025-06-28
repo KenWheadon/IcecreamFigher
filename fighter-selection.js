@@ -71,16 +71,20 @@ class FighterSelection {
       playerName.textContent = fighter.name;
     }
 
-    // Update player emoji in battle screen
-    const playerEmoji = document.getElementById("player-emoji");
-    if (playerEmoji) {
-      playerEmoji.textContent = fighter.sprite;
+    // Update player image in battle screen
+    const playerImage = document.getElementById("player-image");
+    if (playerImage && fighter.image) {
+      CONFIG_UTILS.updateImage(playerImage, fighter.image, fighter.name);
     }
 
     // Update dialogue portrait
     const dialoguePortrait = document.getElementById("dialogue-portrait");
-    if (dialoguePortrait) {
-      dialoguePortrait.textContent = fighter.sprite;
+    if (dialoguePortrait && fighter.image) {
+      CONFIG_UTILS.updateImage(
+        dialoguePortrait,
+        fighter.image,
+        `${fighter.name} Portrait`
+      );
     }
   }
 }

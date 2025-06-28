@@ -133,7 +133,7 @@ class Combat {
   updateFighterUI(type, fighter) {
     const elements = {
       name: document.getElementById(`${type}-name`),
-      emoji: document.getElementById(`${type}-emoji`),
+      image: document.getElementById(`${type}-image`),
       hp: document.getElementById(`${type}-hp`),
       maxHp: document.getElementById(`${type}-max-hp`),
       sanity: document.getElementById(`${type}-sanity`),
@@ -143,8 +143,8 @@ class Combat {
     };
 
     if (elements.name) elements.name.textContent = fighter.name;
-    if (elements.emoji && fighter.sprite) {
-      elements.emoji.textContent = fighter.sprite;
+    if (elements.image && fighter.image) {
+      CONFIG_UTILS.updateImage(elements.image, fighter.image, fighter.name);
     }
     if (elements.hp) elements.hp.textContent = Math.max(0, fighter.hp);
     if (elements.maxHp) elements.maxHp.textContent = fighter.maxHp;
