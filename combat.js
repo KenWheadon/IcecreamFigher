@@ -1,4 +1,4 @@
-// Enhanced Combat System Module with Achievement Integration
+// Enhanced Combat System Module with Achievement Integration and Fixed Power-ups
 class Combat {
   constructor(game) {
     this.game = game;
@@ -44,6 +44,9 @@ class Combat {
       this.game.gameState.enemyBoost = false;
       this.game.gameState.playerDefending = false;
       this.game.gameState.enemyDefending = false;
+      // Add boost turn counter
+      this.game.gameState.playerBoostTurns = 0;
+      this.game.gameState.enemyBoostTurns = 0;
 
       // Restore some sanity between battles
       this.game.gameState.player.sanity = Math.min(
@@ -78,13 +81,21 @@ class Combat {
     const heavyBaseDamage =
       MOVE_DEFINITIONS.heavy.damage + this.game.gameState.player.attack;
 
+    // Apply boost if active
+    const lightBoostedDamage = this.game.gameState.playerBoost
+      ? Math.floor(lightBaseDamage * GAME_CONFIG.BOOST_MULTIPLIER)
+      : lightBaseDamage;
+    const heavyBoostedDamage = this.game.gameState.playerBoost
+      ? Math.floor(heavyBaseDamage * GAME_CONFIG.BOOST_MULTIPLIER)
+      : heavyBaseDamage;
+
     // Calculate final damage after enemy defense
     const lightFinalDamage = CONFIG_UTILS.calculateDamage(
-      lightBaseDamage,
+      lightBoostedDamage,
       this.game.gameState.enemy.defense
     );
     const heavyFinalDamage = CONFIG_UTILS.calculateDamage(
-      heavyBaseDamage,
+      heavyBoostedDamage,
       this.game.gameState.enemy.defense
     );
 
@@ -92,11 +103,19 @@ class Combat {
     const heavyDisplay = document.getElementById("heavy-damage-display");
 
     if (lightDisplay) {
-      lightDisplay.textContent = `Base Cost: 2 | Damage: ${lightFinalDamage}`;
+      let lightText = `Base Cost: 2 | Damage: ${lightFinalDamage}`;
+      if (this.game.gameState.playerBoost) {
+        lightText += ` (BOOSTED!)`;
+      }
+      lightDisplay.textContent = lightText;
     }
 
     if (heavyDisplay) {
-      heavyDisplay.textContent = `Base Cost: 4 | Damage: ${heavyFinalDamage}`;
+      let heavyText = `Base Cost: 4 | Damage: ${heavyFinalDamage}`;
+      if (this.game.gameState.playerBoost) {
+        heavyText += ` (BOOSTED!)`;
+      }
+      heavyDisplay.textContent = heavyText;
     }
   }
 
@@ -189,9 +208,17 @@ class Combat {
         statsContainer.appendChild(battleStatsDiv);
       }
 
-      battleStatsDiv.innerHTML = `
-        <div>Attack: ${fighter.attack} | Defense: ${fighter.defense}</div>
-      `;
+      let statsText = `Attack: ${fighter.attack} | Defense: ${fighter.defense}`;
+
+      // Show boost status
+      if (type === "player" && this.game.gameState.playerBoost) {
+        statsText += ` | BOOSTED (${this.game.gameState.playerBoostTurns} turns left)`;
+      }
+      if (type === "enemy" && this.game.gameState.enemyBoost) {
+        statsText += ` | BOOSTED (${this.game.gameState.enemyBoostTurns} turns left)`;
+      }
+
+      battleStatsDiv.innerHTML = `<div>${statsText}</div>`;
     }
   }
 
@@ -275,9 +302,10 @@ class Combat {
 
       case "boost":
         this.game.gameState.playerBoost = true;
+        this.game.gameState.playerBoostTurns = 3; // Set to 3 turns
         this.game.addAnimationClass(playerSprite, "boost-animation");
         this.game.addBattleLog(
-          `${this.game.gameState.player.name} powers up! Next attack will deal +50% damage!`
+          `${this.game.gameState.player.name} powers up! Next 3 attacks will deal +50% damage!`
         );
         break;
 
@@ -286,14 +314,27 @@ class Combat {
         this.game.addAnimationClass(playerSprite, "attack-animation");
         let damage = move.damage + this.game.gameState.player.attack;
 
-        if (this.game.gameState.playerBoost) {
+        // Check if boost is active BEFORE applying damage
+        const wasBoostActive = this.game.gameState.playerBoost;
+
+        if (wasBoostActive) {
           damage = Math.floor(damage * GAME_CONFIG.BOOST_MULTIPLIER);
-          this.game.gameState.playerBoost = false;
           this.game.addBattleLog(
             `${
               this.game.gameState.player.name
             } uses boosted ${this.getPlayerMoveName(moveType)}!`
           );
+
+          // Decrease boost turns AFTER calculating damage
+          this.game.gameState.playerBoostTurns--;
+          if (this.game.gameState.playerBoostTurns <= 0) {
+            this.game.gameState.playerBoost = false;
+            this.game.addBattleLog("Power up expired!");
+          } else {
+            this.game.addBattleLog(
+              `Power up turns remaining: ${this.game.gameState.playerBoostTurns}`
+            );
+          }
         } else {
           this.game.addBattleLog(
             `${this.game.gameState.player.name} uses ${this.getPlayerMoveName(
@@ -399,6 +440,7 @@ class Combat {
 
         case "boost":
           this.game.gameState.enemyBoost = true;
+          this.game.gameState.enemyBoostTurns = 3; // Set to 3 turns
           this.game.addAnimationClass(enemySprite, "boost-animation");
           this.game.addBattleLog(
             `${this.game.gameState.enemy.name} is powering up!`
@@ -410,12 +452,23 @@ class Combat {
           this.game.addAnimationClass(enemySprite, "attack-animation");
           let damage = enemyMove.damage + this.game.gameState.enemy.attack;
 
-          if (this.game.gameState.enemyBoost) {
+          // Check if enemy boost is active BEFORE applying damage
+          const wasEnemyBoostActive = this.game.gameState.enemyBoost;
+
+          if (wasEnemyBoostActive) {
             damage = Math.floor(damage * GAME_CONFIG.BOOST_MULTIPLIER);
-            this.game.gameState.enemyBoost = false;
             this.game.addBattleLog(
               `${this.game.gameState.enemy.name} uses boosted ${enemyMove.name}!`
             );
+
+            // Decrease boost turns AFTER calculating damage
+            this.game.gameState.enemyBoostTurns--;
+            if (this.game.gameState.enemyBoostTurns <= 0) {
+              this.game.gameState.enemyBoost = false;
+              this.game.addBattleLog(
+                `${this.game.gameState.enemy.name}'s power up expired!`
+              );
+            }
           } else {
             this.game.addBattleLog(
               `${this.game.gameState.enemy.name} uses ${enemyMove.name}!`
@@ -438,6 +491,7 @@ class Combat {
 
             if (this.game.gameState.playerBoost) {
               this.game.gameState.playerBoost = false;
+              this.game.gameState.playerBoostTurns = 0;
               this.game.addBattleLog("Your power up was interrupted!");
             }
           } else {
@@ -538,23 +592,23 @@ class Combat {
       const playerAttack = this.game.gameState.player.attack;
       const enemyDefense = this.game.gameState.enemy.defense;
       const totalDamage = baseDamage + playerAttack;
+
+      // Apply boost if active
+      const boostedDamage = this.game.gameState.playerBoost
+        ? Math.floor(totalDamage * GAME_CONFIG.BOOST_MULTIPLIER)
+        : totalDamage;
+
       const finalDamage = CONFIG_UTILS.calculateDamage(
-        totalDamage,
+        boostedDamage,
         enemyDefense
       );
 
       html += `<div style="margin-top: 8px;"><strong>Damage Calculation:</strong></div>`;
-      html += `<div>${baseDamage} (base) + ${playerAttack} (attack) - ${enemyDefense} (enemy def) = ${finalDamage}</div>`;
-
       if (this.game.gameState.playerBoost) {
-        const boostedTotal = Math.floor(
-          totalDamage * GAME_CONFIG.BOOST_MULTIPLIER
-        );
-        const boostedFinal = CONFIG_UTILS.calculateDamage(
-          boostedTotal,
-          enemyDefense
-        );
-        html += `<div style="color: #f5576c; font-weight: bold;">With Power Up: ${boostedFinal} damage!</div>`;
+        html += `<div>${baseDamage} (base) + ${playerAttack} (attack) × 1.5 (boost) - ${enemyDefense} (enemy def) = ${finalDamage}</div>`;
+        html += `<div style="color: #f5576c; font-weight: bold;">BOOSTED: ${finalDamage} damage! (${this.game.gameState.playerBoostTurns} turns left)</div>`;
+      } else {
+        html += `<div>${baseDamage} (base) + ${playerAttack} (attack) - ${enemyDefense} (enemy def) = ${finalDamage}</div>`;
       }
     }
 

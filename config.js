@@ -14,7 +14,7 @@ const GAME_CONFIG = {
   SANITY_RECOVERY_PER_TURN: 1,
   SANITY_RECOVERY_BETWEEN_BATTLES: 3, // Increased recovery
   MALFUNCTION_SANITY_RECOVERY: 0.5,
-  TRAINING_BONUS_THRESHOLD: 200, // Reduced threshold for bonus reward
+  TRAINING_BONUS_THRESHOLD: 500, // Adjusted for 500-600 point range
   MAX_COMBO_MULTIPLIER: 10, // Increased max combo
   MAX_SIMULTANEOUS_BUBBLES: 6, // New: max bubbles on screen at once
   BUBBLE_BASE_POINTS: [1, 2, 3, 5, 8], // Points for different bubble sizes/types
@@ -225,7 +225,7 @@ const MOVE_DEFINITIONS = {
     name: "Power Up",
     damage: 0,
     baseCost: 3,
-    description: "+50% damage next turn",
+    description: "+50% damage next 3 turns",
     sanityCosts: {
       vsLight: 3,
       vsHeavy: 5,
@@ -295,7 +295,7 @@ const TALKDOWN_OPTIONS = [
   { text: "Think of all the happy customers you've served!", success: true },
 ];
 
-// Enhanced Slot machine configuration with better rewards
+// Simple Slot machine configuration with equal chances and 20% loss rate
 const SLOT_CONFIG = {
   symbols: [
     { emoji: "🍦", name: "vanilla", image: "images/slot_vanilla.png" },
@@ -305,61 +305,79 @@ const SLOT_CONFIG = {
     { emoji: "🧊", name: "ice", image: "images/slot_ice.png" },
     { emoji: "🪙", name: "coin", image: "images/slot_coin.png" },
   ],
-  // Adjusted weights for better win rate (~65%)
-  weights: [100, 80, 60, 40, 20, 10],
+  // Simple results array - 80% win rate (equal chances for each symbol), 20% loss rate
+  results: [
+    // Wins (80% total, ~13.33% each)
+    { type: "win", symbol: "vanilla" },
+    { type: "win", symbol: "vanilla" },
+    { type: "win", symbol: "chocolate" },
+    { type: "win", symbol: "chocolate" },
+    { type: "win", symbol: "strawberry" },
+    { type: "win", symbol: "strawberry" },
+    { type: "win", symbol: "soft" },
+    { type: "win", symbol: "soft" },
+    { type: "win", symbol: "ice" },
+    { type: "win", symbol: "ice" },
+    { type: "win", symbol: "coin" },
+    { type: "win", symbol: "coin" },
+    // Losses (20% total)
+    { type: "loss" },
+    { type: "loss" },
+    { type: "loss" },
+  ],
   rewards: {
     triple: {
-      vanilla: { name: "VANILLA VICTORY!", attack: 3, color: "#f5e6d3" },
-      chocolate: { name: "CHOCOLATE CHAMPION!", defense: 3, color: "#8b4513" },
-      strawberry: { name: "STRAWBERRY SUPREME!", hp: 25, color: "#ff6b6b" },
-      soft: { name: "SOFT SERVE SUCCESS!", sanity: 3, color: "#ffeaa7" },
+      vanilla: { name: "VANILLA VICTORY!", attack: 5, color: "#f5e6d3" }, // Increased from 3 to 5
+      chocolate: { name: "CHOCOLATE CHAMPION!", defense: 5, color: "#8b4513" }, // Increased from 3 to 5
+      strawberry: { name: "STRAWBERRY SUPREME!", hp: 40, color: "#ff6b6b" }, // Increased from 25 to 40
+      soft: { name: "SOFT SERVE SUCCESS!", sanity: 5, color: "#ffeaa7" }, // Increased from 3 to 5
       ice: {
         name: "ICE COLD JACKPOT!",
-        attack: 2,
-        defense: 2,
-        sanity: 2,
-        hp: 20,
+        attack: 3,
+        defense: 3,
+        sanity: 3,
+        hp: 30, // Increased from 20 to 30
         color: "#48dbfb",
       },
-      coin: { name: "COIN JACKPOT!", points: 50, color: "#fdcb6e" },
+      coin: { name: "COIN JACKPOT!", points: 100, color: "#fdcb6e" }, // Increased from 50 to 100
     },
   },
 };
 
-// Enhanced training rewards with better balance
+// Enhanced training rewards balanced for 500-600 points
 const TRAINING_REWARDS = {
   attack: {
-    name: "+5 Attack",
+    name: "+8 Attack", // Increased from +5
     description: "Increase your attack power significantly",
     icon: "images/upgrade_attack.png",
     apply: (player) => {
-      player.attack += 5; // Increased from 3
+      player.attack += 8; // Increased from 5
     },
   },
   defense: {
-    name: "+5 Defense",
+    name: "+8 Defense", // Increased from +5
     description: "Increase your defense power significantly",
     icon: "images/upgrade_defense.png",
     apply: (player) => {
-      player.defense += 5; // Increased from 3
+      player.defense += 8; // Increased from 5
     },
   },
   sanity: {
-    name: "+2 Max Sanity",
+    name: "+3 Max Sanity", // Increased from +2
     description: "Increase your maximum sanity",
     icon: "images/upgrade_sanity.png",
     apply: (player) => {
-      player.maxSanity += 2; // Increased from 1
-      player.sanity = Math.min(player.sanity + 2, player.maxSanity);
+      player.maxSanity += 3; // Increased from 2
+      player.sanity = Math.min(player.sanity + 3, player.maxSanity);
     },
   },
   health: {
-    name: "+25 Max HP",
+    name: "+40 Max HP", // Increased from +25
     description: "Increase your maximum health significantly",
     icon: "images/upgrade_health.png",
     apply: (player) => {
-      player.maxHp += 25; // Increased from 10
-      player.hp = Math.min(player.hp + 25, player.maxHp);
+      player.maxHp += 40; // Increased from 25
+      player.hp = Math.min(player.hp + 40, player.maxHp);
     },
   },
 };
@@ -650,25 +668,17 @@ const CONFIG_UTILS = {
   },
 
   /**
-   * Get a weighted random symbol for slot machine
+   * Get a simple random slot result using the new results array
+   */
+  getSlotResult() {
+    return this.getRandomElement(SLOT_CONFIG.results);
+  },
+
+  /**
+   * Get a weighted random symbol for slot machine (for reel spinning animation)
    */
   getWeightedSlotSymbol() {
-    const { symbols, weights } = SLOT_CONFIG;
-    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-
-    if (totalWeight <= 0) {
-      console.error("Invalid total weight in slot configuration");
-      return symbols[0];
-    }
-
-    let random = Math.random() * totalWeight;
-
-    for (let i = 0; i < symbols.length; i++) {
-      random -= weights[i];
-      if (random <= 0) return symbols[i];
-    }
-
-    return symbols[0];
+    return this.getRandomElement(SLOT_CONFIG.symbols);
   },
 
   /**

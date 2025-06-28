@@ -1,4 +1,4 @@
-// Enhanced Training Module with Multiple Bubbles
+// Enhanced Training Module with Better Combo Logic and Simple Slots
 class Training {
   constructor(game) {
     this.game = game;
@@ -42,18 +42,23 @@ class Training {
       });
     }
 
-    // Training target for cone clicking (restored original)
+    // IMPROVED: Training target for cone clicking with better event handling
     const trainingTarget = document.getElementById("training-target");
     if (trainingTarget) {
       trainingTarget.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent event bubbling
+
         const coneElement = e.target.closest(".moving-cone");
         if (coneElement) {
+          // Clicked on a cone - collect it
           const points = parseInt(coneElement.dataset.points) || 1;
           this.game.playSound("bubbleClick");
           this.collectCone(coneElement, points);
         } else {
-          // Clicked on background - reset combo
-          this.resetCombo();
+          // Clicked on empty space in training area - only reset combo if we had one
+          if (this.game.gameState.trainingCombo > 0) {
+            this.resetCombo();
+          }
         }
       });
     }
@@ -80,8 +85,8 @@ class Training {
         "training-timer",
         GAME_CONFIG.TRAINING_TIME.toString()
       );
-      this.game.updateElement("slot-cost", "1");
-      this.game.updateElement("spin-cost", "1");
+      this.game.updateElement("slot-cost", "10"); // Updated initial cost for 500-600 point range
+      this.game.updateElement("spin-cost", "10"); // Updated initial cost
 
       // Show training game elements
       const trainingCombo = document.getElementById("training-combo");
@@ -145,7 +150,7 @@ class Training {
     switch (phase) {
       case "mini-game":
         instructions.textContent =
-          "Click the ice cream cones for points! Higher = more points! Don't click the background!";
+          "Click the ice cream cones for points! Higher = more points! Combo builds when you hit cones!";
         break;
       case "rewards":
         instructions.textContent =
@@ -218,13 +223,13 @@ class Training {
           cone.style.bottom = targetHeight + "px";
         }, 50);
 
-        // Remove cone after timeout
+        // Remove cone after timeout - IMPROVED: Only reset combo if cone expires without being clicked
         setTimeout(() => {
           if (cone.parentNode) {
             cone.remove();
+            // Only reset combo if player had one and let a cone expire
             if (this.game.gameState.trainingCombo > 0) {
-              this.game.gameState.trainingCombo = 0;
-              this.game.updateElement("combo-counter", "0");
+              this.resetCombo();
             }
           }
         }, GAME_CONFIG.TRAINING_BUBBLE_LIFETIME);
@@ -243,7 +248,7 @@ class Training {
   }
 
   /**
-   * Collect a training cone (restored original with combo reset)
+   * Collect a training cone (IMPROVED: combo only resets on missed cones or background clicks)
    */
   collectCone(cone, points) {
     try {
@@ -292,7 +297,7 @@ class Training {
   }
 
   /**
-   * Reset combo when background is clicked
+   * Reset combo when background is clicked or cone expires
    */
   resetCombo() {
     if (this.game.gameState.trainingCombo > 0) {
@@ -380,7 +385,7 @@ class Training {
   }
 
   /**
-   * Update training button costs and availability
+   * Update training button costs and availability (UPDATED for 500-600 point range)
    */
   updateTrainingButtonCosts() {
     const buttons = document.querySelectorAll("[data-training]");
@@ -425,11 +430,11 @@ class Training {
   }
 
   /**
-   * Get cost for training reward (progressive pricing)
+   * Get cost for training reward (UPDATED progressive pricing for 500-600 points)
    */
   getTrainingCost(rewardType) {
-    const baseCost = 25; // Increased base cost
-    return baseCost + this.game.gameState.trainingPurchases * 15;
+    const baseCost = 120; // Increased base cost for 500-600 point range
+    return baseCost + this.game.gameState.trainingPurchases * 80; // Increased progression
   }
 
   /**
@@ -551,10 +556,10 @@ class Training {
   }
 
   /**
-   * Update slot button state
+   * Update slot button state (UPDATED for new cost structure)
    */
   updateSlotButtonState() {
-    const nextCost = 1 + this.game.gameState.slotSpins;
+    const nextCost = 10 + this.game.gameState.slotSpins * 15; // Updated cost progression
     const spinBtn = document.getElementById("spin-btn");
     if (spinBtn) {
       spinBtn.disabled = this.game.gameState.trainingScore < nextCost;
@@ -577,7 +582,7 @@ class Training {
   /**
    * Add visual feedback to slot reels
    */
-  addSlotFeedback(results, isWin) {
+  addSlotFeedback(isWin) {
     const reels = ["reel1", "reel2", "reel3"];
 
     if (isWin) {
@@ -585,6 +590,13 @@ class Training {
         const reel = document.getElementById(reelId);
         if (reel) {
           reel.classList.add("winner");
+        }
+      });
+    } else {
+      reels.forEach((reelId) => {
+        const reel = document.getElementById(reelId);
+        if (reel) {
+          reel.classList.add("loser");
         }
       });
     }
@@ -623,10 +635,10 @@ class Training {
   }
 
   /**
-   * Spin slot machine with enhanced rewards and feedback
+   * SIMPLIFIED: Spin slot machine using simple results array
    */
   spinSlots() {
-    const cost = 1 + this.game.gameState.slotSpins;
+    const cost = 10 + this.game.gameState.slotSpins * 15; // Updated cost progression
 
     if (this.game.gameState.trainingScore < cost) {
       this.game.updateElement(
@@ -644,26 +656,16 @@ class Training {
         "final-score",
         this.game.gameState.trainingScore.toString()
       );
-      this.game.updateElement(
-        "slot-cost",
-        (1 + this.game.gameState.slotSpins).toString()
-      );
-      this.game.updateElement(
-        "spin-cost",
-        (1 + this.game.gameState.slotSpins).toString()
-      );
+
+      const nextCost = 10 + this.game.gameState.slotSpins * 15;
+      this.game.updateElement("slot-cost", nextCost.toString());
+      this.game.updateElement("spin-cost", nextCost.toString());
 
       this.game.playSound("spin", 0.5);
       this.clearSlotFeedback();
 
-      // Generate results
-      const results = [
-        CONFIG_UTILS.getWeightedSlotSymbol(),
-        CONFIG_UTILS.getWeightedSlotSymbol(),
-        CONFIG_UTILS.getWeightedSlotSymbol(),
-      ];
-
-      console.log("Slot results generated:", results);
+      // SIMPLIFIED: Get result from simple results array
+      const result = CONFIG_UTILS.getSlotResult();
 
       // Animate reels
       const reels = ["reel1", "reel2", "reel3"];
@@ -696,18 +698,36 @@ class Training {
             clearInterval(spinInterval);
             reel.classList.remove("spinning");
 
-            // Set final result
-            if (reelContent && results[index]) {
-              if (reelContent.tagName === "IMG") {
-                reelContent.src = `images/slot_${results[index].name}.png`;
-                reelContent.alt = results[index].name;
+            // Set final result based on simple result object
+            if (reelContent) {
+              if (result.type === "win") {
+                // Show winning symbol
+                const winSymbol = SLOT_CONFIG.symbols.find(
+                  (s) => s.name === result.symbol
+                );
+                if (winSymbol) {
+                  if (reelContent.tagName === "IMG") {
+                    reelContent.src = `images/slot_${winSymbol.name}.png`;
+                    reelContent.alt = winSymbol.name;
+                  } else {
+                    reelContent.textContent = winSymbol.emoji;
+                  }
+                }
               } else {
-                reelContent.textContent = results[index].emoji;
+                // Show random different symbols for loss
+                const lossSymbols = SLOT_CONFIG.symbols.slice(); // Copy array
+                const differentSymbol = lossSymbols[index % lossSymbols.length];
+                if (reelContent.tagName === "IMG") {
+                  reelContent.src = `images/slot_${differentSymbol.name}.png`;
+                  reelContent.alt = differentSymbol.name;
+                } else {
+                  reelContent.textContent = differentSymbol.emoji;
+                }
               }
             }
 
             if (index === 2) {
-              this.checkSlotResults(results);
+              this.checkSimpleSlotResults(result);
             }
           }
         }, GAME_CONFIG.SLOT_SPIN_DURATION);
@@ -720,36 +740,16 @@ class Training {
   }
 
   /**
-   * Check slot machine results and apply rewards
+   * SIMPLIFIED: Check slot machine results using simple result object
    */
-  checkSlotResults(results) {
+  checkSimpleSlotResults(result) {
     const resultElement = document.getElementById("slot-result");
     if (!resultElement) return;
 
     try {
-      console.log("Checking slot results:", results);
-      console.log(
-        "Result names:",
-        results.map((r) => r.name)
-      );
-      console.log(
-        "Result emojis:",
-        results.map((r) => r.emoji)
-      );
+      console.log("Checking simple slot result:", result);
 
-      // Check for exactly 3 matching symbols by name
-      const isWin =
-        results[0].name === results[1].name &&
-        results[1].name === results[2].name;
-      console.log("Is win?", isWin);
-      console.log(
-        "Comparison:",
-        results[0].name,
-        "===",
-        results[1].name,
-        "===",
-        results[2].name
-      );
+      const isWin = result.type === "win";
 
       // Track consecutive losses for achievement
       if (!isWin) {
@@ -786,7 +786,7 @@ class Training {
       }
 
       if (isWin) {
-        const symbolName = results[0].name;
+        const symbolName = result.symbol;
         const reward = SLOT_CONFIG.rewards.triple[symbolName];
         console.log("Win! Symbol:", symbolName, "Reward:", reward);
 
@@ -843,7 +843,7 @@ class Training {
         }
       }, 3000);
 
-      this.addSlotFeedback(results, isWin);
+      this.addSlotFeedback(isWin);
       this.updateSlotButtonState();
       this.updateTrainingButtonCosts();
     } catch (error) {
