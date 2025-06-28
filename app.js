@@ -1,4 +1,4 @@
-// Enhanced Ice Cream Fighter - Main Application Controller with Achievements
+// Enhanced Ice Cream Fighter - Main Application Controller with Achievements and Victory Popup
 class IceCreamFighter {
   constructor() {
     this.gameState = {
@@ -20,6 +20,7 @@ class IceCreamFighter {
       slotConsecutiveLosses: 0,
       currentScreen: "fighter-select-screen",
       selectedFighterType: null,
+      malfunctionedMove: null, // Track which move is malfunctioning
     };
 
     this.timers = {
@@ -207,6 +208,104 @@ class IceCreamFighter {
   }
 
   /**
+   * Show victory popup instead of full screen
+   */
+  showVictoryPopup() {
+    // Create victory popup
+    const popup = document.createElement("div");
+    popup.id = "victory-popup";
+    popup.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
+      color: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+      z-index: 10000;
+      text-align: center;
+      font-family: "Comic Sans MS", cursive, sans-serif;
+      border: 3px solid white;
+      animation: victoryAppear 0.8s ease-out;
+      max-width: 500px;
+    `;
+
+    popup.innerHTML = `
+      <img src="images/victory.png" alt="Victory" style="width: 120px; height: 120px; object-fit: contain; margin-bottom: 20px;" />
+      <div style="font-size: 36px; margin-bottom: 20px;">🎉 VICTORY! 🎉</div>
+      <div style="font-size: 20px; margin-bottom: 10px; font-weight: bold;">
+        You conquered all 5 battles!
+      </div>
+      <div style="font-size: 16px; margin-bottom: 30px;">
+        Your ice cream fighter is the ultimate champion!
+      </div>
+      <button id="victory-play-again" style="
+        background: rgba(255,255,255,0.3);
+        border: 2px solid white;
+        color: white;
+        padding: 15px 30px;
+        border-radius: 15px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+        margin: 0 10px;
+      ">Play Again</button>
+      <button id="victory-close" style="
+        background: rgba(255,255,255,0.1);
+        border: 2px solid white;
+        color: white;
+        padding: 15px 30px;
+        border-radius: 15px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+        margin: 0 10px;
+      ">Close</button>
+    `;
+
+    // Add animation CSS
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes victoryAppear {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.3) rotate(-10deg);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(popup);
+
+    // Add click handlers
+    const playAgainButton = document.getElementById("victory-play-again");
+    const closeButton = document.getElementById("victory-close");
+
+    playAgainButton.addEventListener("click", () => {
+      this.playSound("buttonClick");
+      location.reload();
+    });
+
+    closeButton.addEventListener("click", () => {
+      this.playSound("buttonClick");
+      popup.remove();
+      style.remove();
+      // Return to fighter selection
+      this.showScreen("fighter-select-screen");
+    });
+
+    this.playSound("victorySound");
+  }
+
+  /**
    * Play background music
    */
   playMusic(musicType) {
@@ -289,7 +388,7 @@ class IceCreamFighter {
   }
 
   /**
-   * Update fighter-specific move names in UI
+   * Update fighter-specific move names in UI and show/hide move buttons
    */
   updateFighterMoveNames() {
     if (!this.gameState.player || !this.gameState.selectedFighterType) return;
@@ -297,16 +396,44 @@ class IceCreamFighter {
     const fighter = FIGHTER_TEMPLATES[this.gameState.selectedFighterType];
     if (!fighter || !fighter.moves) return;
 
-    // Update move button names ONLY - keep the existing images
+    // Update move button names and show/hide buttons based on fighter moves
     const lightName = document.getElementById("light-move-name");
     const heavyName = document.getElementById("heavy-move-name");
     const defendName = document.getElementById("defend-move-name");
+    const healName = document.getElementById("heal-move-name");
     const boostName = document.getElementById("boost-move-name");
 
+    const defendBtn = document.getElementById("btn-defend");
+    const healBtn = document.getElementById("btn-heal");
+
+    // Always show light and heavy attacks
     if (lightName) lightName.textContent = fighter.moves.light.name;
     if (heavyName) heavyName.textContent = fighter.moves.heavy.name;
-    if (defendName) defendName.textContent = fighter.moves.defend.name;
     if (boostName) boostName.textContent = fighter.moves.boost.name;
+
+    // Show/hide defend button based on fighter
+    if (fighter.moves.defend) {
+      if (defendName) defendName.textContent = fighter.moves.defend.name;
+      if (defendBtn) defendBtn.style.display = "flex";
+    } else {
+      if (defendBtn) defendBtn.style.display = "none";
+    }
+
+    // Show/hide heal button based on fighter
+    if (fighter.moves.heal) {
+      if (healName) healName.textContent = fighter.moves.heal.name;
+      if (healBtn) healBtn.style.display = "flex";
+    } else {
+      if (healBtn) healBtn.style.display = "none";
+    }
+
+    // Update move button damage display to include heal if present
+    if (fighter.moves.heal) {
+      const healDisplay = document.getElementById("heal-damage-display");
+      if (healDisplay) {
+        healDisplay.textContent = "Base Cost: 3 | Restore 30% HP";
+      }
+    }
 
     // DO NOT UPDATE ICONS - Keep the existing image icons in the HTML
     // The <img> tags should remain unchanged

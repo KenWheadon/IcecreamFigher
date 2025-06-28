@@ -1,4 +1,4 @@
-// Enhanced Training Module with Better Combo Logic and Simple Slots
+// Enhanced Training Module with Fixed Combo Logic and Celebration Popup
 class Training {
   constructor(game) {
     this.game = game;
@@ -54,12 +54,8 @@ class Training {
           const points = parseInt(coneElement.dataset.points) || 1;
           this.game.playSound("bubbleClick");
           this.collectCone(coneElement, points);
-        } else {
-          // Clicked on empty space in training area - only reset combo if we had one
-          if (this.game.gameState.trainingCombo > 0) {
-            this.resetCombo();
-          }
         }
+        // REMOVED: Background click combo reset - now combos never reset during mini-game
       });
     }
   }
@@ -70,7 +66,7 @@ class Training {
   startTraining() {
     try {
       this.game.gameState.trainingScore = 0;
-      this.game.gameState.trainingCombo = 0;
+      this.game.gameState.trainingCombo = 0; // This will track total bubbles clicked
       this.game.gameState.trainingActive = true;
       this.game.gameState.slotSpins = 0;
       this.game.gameState.trainingPurchases = 0;
@@ -150,7 +146,7 @@ class Training {
     switch (phase) {
       case "mini-game":
         instructions.textContent =
-          "Click the ice cream cones for points! Higher = more points! Combo builds when you hit cones!";
+          "Click the ice cream cones for points! Higher = more points! Combo = total clicked!";
         break;
       case "rewards":
         instructions.textContent =
@@ -223,14 +219,10 @@ class Training {
           cone.style.bottom = targetHeight + "px";
         }, 50);
 
-        // Remove cone after timeout - IMPROVED: Only reset combo if cone expires without being clicked
+        // Remove cone after timeout - IMPROVED: No combo reset when cones expire
         setTimeout(() => {
           if (cone.parentNode) {
             cone.remove();
-            // Only reset combo if player had one and let a cone expire
-            if (this.game.gameState.trainingCombo > 0) {
-              this.resetCombo();
-            }
           }
         }, GAME_CONFIG.TRAINING_BUBBLE_LIFETIME);
       }
@@ -248,11 +240,11 @@ class Training {
   }
 
   /**
-   * Collect a training cone (IMPROVED: combo only resets on missed cones or background clicks)
+   * Collect a training cone (IMPROVED: combo = total bubbles clicked)
    */
   collectCone(cone, points) {
     try {
-      this.game.gameState.trainingCombo++;
+      this.game.gameState.trainingCombo++; // Simply increment total clicked
       const comboMultiplier = Math.min(
         this.game.gameState.trainingCombo,
         GAME_CONFIG.MAX_COMBO_MULTIPLIER
@@ -297,22 +289,90 @@ class Training {
   }
 
   /**
-   * Reset combo when background is clicked or cone expires
+   * Show celebration popup for training results
    */
-  resetCombo() {
-    if (this.game.gameState.trainingCombo > 0) {
-      this.game.gameState.trainingCombo = 0;
-      this.game.updateElement("combo-counter", "0");
+  showCelebrationPopup() {
+    const points = this.game.gameState.trainingScore;
+    const combo = this.game.gameState.trainingCombo;
 
-      // Show visual feedback
-      const target = document.getElementById("training-target");
-      if (target) {
-        target.classList.add("combo-lost");
-        setTimeout(() => {
-          target.classList.remove("combo-lost");
-        }, 500);
+    // Create popup
+    const popup = document.createElement("div");
+    popup.id = "training-celebration-popup";
+    popup.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+      z-index: 10000;
+      text-align: center;
+      font-family: "Comic Sans MS", cursive, sans-serif;
+      border: 3px solid white;
+      animation: popupAppear 0.5s ease-out;
+    `;
+
+    popup.innerHTML = `
+      <div style="font-size: 32px; margin-bottom: 20px;">🎉 TRAINING COMPLETE! 🎉</div>
+      <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">
+        YOU WON ${points} POINTS
+      </div>
+      <div style="font-size: 20px; margin-bottom: 20px;">
+        AND GOT A COMBO OF ${combo}!
+      </div>
+      <button id="celebration-ok" style="
+        background: rgba(255,255,255,0.3);
+        border: 2px solid white;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 15px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+      ">Awesome!</button>
+    `;
+
+    // Add animation CSS
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes popupAppear {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.5);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+        }
       }
-    }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(popup);
+
+    // Add click handler
+    const okButton = document.getElementById("celebration-ok");
+    okButton.addEventListener("click", () => {
+      this.game.playSound("buttonClick");
+      popup.remove();
+      style.remove();
+    });
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (popup.parentNode) {
+        popup.remove();
+      }
+      if (style.parentNode) {
+        style.remove();
+      }
+    }, 5000);
+
+    this.game.playSound("trainingComplete");
   }
 
   /**
@@ -325,6 +385,9 @@ class Training {
       clearInterval(this.game.timers.training);
       this.game.timers.training = null;
     }
+
+    // Show celebration popup first
+    this.showCelebrationPopup();
 
     // Clear all active cones
     const target = document.getElementById("training-target");
@@ -365,7 +428,6 @@ class Training {
     this.updateTrainingButtonCosts();
     this.updateSlotButtonState();
     this.showTrainingPhaseUI("rewards");
-    this.game.playSound("trainingComplete");
 
     // Show continue button
     const continueBtn = document.getElementById("continue-training");
@@ -615,15 +677,17 @@ class Training {
       row.classList.remove("paytable-winner");
     });
 
+    // Find the matching paytable row by checking the alt text of images
     paytableRows.forEach((row) => {
-      const symbols = row.querySelector(".paytable-symbols");
-      if (
-        symbols &&
-        symbols.textContent.includes(
-          SLOT_CONFIG.symbols.find((s) => s.name === symbolName)?.emoji
-        )
-      ) {
-        row.classList.add("paytable-winner");
+      const symbols = row.querySelectorAll(".paytable-symbol");
+      if (symbols.length === 3) {
+        const firstSymbolAlt = symbols[0].alt;
+        if (
+          firstSymbolAlt &&
+          firstSymbolAlt.toLowerCase() === symbolName.toLowerCase()
+        ) {
+          row.classList.add("paytable-winner");
+        }
       }
     });
 

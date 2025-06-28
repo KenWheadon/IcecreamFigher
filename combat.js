@@ -1,4 +1,4 @@
-// Enhanced Combat System Module with Achievement Integration and Fixed Power-ups
+// Enhanced Combat System Module with Achievement Integration, Fixed Power-ups, and Attack Malfunction
 class Combat {
   constructor(game) {
     this.game = game;
@@ -47,6 +47,8 @@ class Combat {
       // Add boost turn counter
       this.game.gameState.playerBoostTurns = 0;
       this.game.gameState.enemyBoostTurns = 0;
+      // Add malfunction tracking
+      this.game.gameState.malfunctionedMove = null;
 
       // Restore some sanity between battles
       this.game.gameState.player.sanity = Math.min(
@@ -54,6 +56,9 @@ class Combat {
           GAME_CONFIG.SANITY_RECOVERY_BETWEEN_BATTLES,
         this.game.gameState.player.maxSanity
       );
+
+      // Apply initial malfunction for first turn
+      this.applyTurnMalfunction();
 
       this.updateBattleUI();
       this.updateMoveButtonDamage();
@@ -68,6 +73,75 @@ class Combat {
         "An error occurred starting the battle!"
       );
     }
+  }
+
+  /**
+   * Apply malfunction to one random attack move for the turn
+   */
+  applyTurnMalfunction() {
+    // Only malfunction attack moves (light and heavy)
+    const attackMoves = ["light", "heavy"];
+    this.game.gameState.malfunctionedMove =
+      CONFIG_UTILS.getRandomElement(attackMoves);
+
+    this.game.addBattleLog(
+      `⚡ ${
+        this.game.gameState.malfunctionedMove === "light"
+          ? "Light attack"
+          : "Heavy attack"
+      } is malfunctioning this turn!`
+    );
+
+    // Update button visual
+    this.updateMalfunctionUI();
+  }
+
+  /**
+   * Update UI to show malfunction status
+   */
+  updateMalfunctionUI() {
+    // Reset all buttons first
+    document.querySelectorAll(".move-btn[data-move]").forEach((btn) => {
+      const icon = btn.querySelector(".move-icon");
+      if (icon) {
+        icon.style.filter = "none";
+      }
+      btn.classList.remove("malfunctioning");
+    });
+
+    // Apply malfunction to the selected move
+    if (this.game.gameState.malfunctionedMove) {
+      const btnId = `btn-${this.game.gameState.malfunctionedMove}`;
+      const malfunctionBtn = document.getElementById(btnId);
+      if (malfunctionBtn) {
+        const icon = malfunctionBtn.querySelector(".move-icon");
+        if (icon) {
+          // Replace with malfunction symbol - using existing image
+          const originalSrc = icon.src;
+          icon.dataset.originalSrc = originalSrc;
+          icon.src = "images/malfunction_effect.png";
+          icon.style.filter = "hue-rotate(45deg) saturate(2)";
+        }
+        malfunctionBtn.classList.add("malfunctioning");
+        malfunctionBtn.disabled = true;
+      }
+    }
+  }
+
+  /**
+   * Reset malfunction at start of player turn
+   */
+  resetMalfunction() {
+    // Restore original icons
+    document.querySelectorAll(".move-btn[data-move]").forEach((btn) => {
+      const icon = btn.querySelector(".move-icon");
+      if (icon && icon.dataset.originalSrc) {
+        icon.src = icon.dataset.originalSrc;
+        icon.style.filter = "none";
+        delete icon.dataset.originalSrc;
+      }
+      btn.classList.remove("malfunctioning");
+    });
   }
 
   /**
@@ -134,10 +208,18 @@ class Combat {
 
       const buttons = document.querySelectorAll(".move-btn");
       buttons.forEach((btn) => {
+        const moveType = btn.dataset.move;
+        const isMalfunctioned =
+          moveType === this.game.gameState.malfunctionedMove;
+
         btn.disabled =
           !this.game.gameState.isPlayerTurn ||
-          this.game.gameState.isMalfunctioning;
+          this.game.gameState.isMalfunctioning ||
+          isMalfunctioned;
       });
+
+      // Update malfunction UI
+      this.updateMalfunctionUI();
 
       // Update damage display whenever UI updates
       this.updateMoveButtonDamage();
@@ -228,8 +310,12 @@ class Combat {
   playerMove(moveType) {
     if (
       !this.game.gameState.isPlayerTurn ||
-      this.game.gameState.isMalfunctioning
+      this.game.gameState.isMalfunctioning ||
+      moveType === this.game.gameState.malfunctionedMove
     ) {
+      if (moveType === this.game.gameState.malfunctionedMove) {
+        this.game.addBattleLog("⚡ That attack is malfunctioning this turn!");
+      }
       return;
     }
 
@@ -537,6 +623,10 @@ class Combat {
       this.game.gameState.enemy.maxSanity
     );
 
+    // Reset malfunction and apply new one for next turn
+    this.resetMalfunction();
+    this.applyTurnMalfunction();
+
     this.updateBattleUI();
   }
 
@@ -557,7 +647,7 @@ class Combat {
       setTimeout(() => {
         this.game.playMusic("victory");
         this.game.playSound("victorySound");
-        this.game.showScreen("victory-screen");
+        this.game.showVictoryPopup();
       }, 1500);
     } else {
       setTimeout(() => {

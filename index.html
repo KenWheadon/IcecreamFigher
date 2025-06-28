@@ -29,7 +29,7 @@
       <!-- Fighter Selection Screen -->
       <div class="screen" id="fighter-select-screen">
         <h1>YOU WANNA FIGHT A GANG?</h1>
-        <h1>🍦Which Ice Cream?🍦</h1>
+        <h2>🍦Which Ice Cream?🍦</h2>
         <div class="fighter-select">
           <div class="fighter-option" data-fighter="vanilla">
             <div class="fighter-sprite">
@@ -40,12 +40,13 @@
               />
             </div>
             <h3>Vanilla</h3>
-            <p>The Classic</p>
+            <p>The Versatile</p>
             <div class="fighter-stats">
               <div class="stat-row">HP: 100</div>
               <div class="stat-row">Attack: 15</div>
               <div class="stat-row">Defense: 10</div>
               <div class="stat-row">Sanity: 12</div>
+              <div class="stat-row">Moves: Heal + Boost</div>
             </div>
           </div>
           <div class="fighter-option" data-fighter="chocolate">
@@ -63,6 +64,7 @@
               <div class="stat-row">Attack: 22</div>
               <div class="stat-row">Defense: 8</div>
               <div class="stat-row">Sanity: 10</div>
+              <div class="stat-row">Moves: Defend + Boost</div>
             </div>
           </div>
           <div class="fighter-option" data-fighter="strawberry">
@@ -74,12 +76,13 @@
               />
             </div>
             <h3>Strawberry</h3>
-            <p>The Sweet</p>
+            <p>The Tank</p>
             <div class="fighter-stats">
               <div class="stat-row">HP: 120</div>
               <div class="stat-row">Attack: 12</div>
               <div class="stat-row">Defense: 18</div>
               <div class="stat-row">Sanity: 14</div>
+              <div class="stat-row">Moves: Heal + Boost</div>
             </div>
           </div>
         </div>
@@ -185,7 +188,13 @@
             </div>
             <div class="move-tooltip" id="tooltip-heavy"></div>
           </button>
-          <button class="move-btn" data-move="defend" id="btn-defend">
+          <!-- Defend Button - will be hidden for fighters without defend -->
+          <button
+            class="move-btn"
+            data-move="defend"
+            id="btn-defend"
+            style="display: none"
+          >
             <img src="images/defend_icon.png" alt="Defend" class="move-icon" />
             <div class="attack-text">
               <span class="move-name" id="defend-move-name">Ice Shield</span>
@@ -193,11 +202,25 @@
             </div>
             <div class="move-tooltip" id="tooltip-defend"></div>
           </button>
+          <!-- Heal Button - will be shown for fighters with heal -->
+          <button
+            class="move-btn"
+            data-move="heal"
+            id="btn-heal"
+            style="display: none"
+          >
+            <img src="images/heal_icon.png" alt="Heal" class="move-icon" />
+            <div class="attack-text">
+              <span class="move-name" id="heal-move-name">Heal</span>
+              <div class="move-cost">Base Cost: 3 | Restore 30% HP</div>
+            </div>
+            <div class="move-tooltip" id="tooltip-heal"></div>
+          </button>
           <button class="move-btn" data-move="boost" id="btn-boost">
             <img src="images/boost_icon.png" alt="Boost" class="move-icon" />
             <div class="attack-text">
               <span class="move-name" id="boost-move-name">Sugar Rush</span>
-              <div class="move-cost">Base Cost: 3 | +50% damage</div>
+              <div class="move-cost">Base Cost: 3 | +100% damage</div>
             </div>
             <div class="move-tooltip" id="tooltip-boost"></div>
           </button>
@@ -475,7 +498,6 @@
       <!-- Game Over Screen -->
       <div class="screen" id="game-over-screen">
         <img src="images/game_over.png" alt="Game Over" class="screen-image" />
-        <h1>Game Over</h1>
         <p class="final-score">
           You reached Battle <span id="final-battle">1</span> of 5
         </p>

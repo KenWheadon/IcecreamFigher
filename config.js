@@ -10,7 +10,7 @@ const GAME_CONFIG = {
   TRAINING_BUBBLE_LIFETIME: 4000, // Increased bubble lifetime
   SLOT_SPIN_DURATION: 100,
   SLOT_SPIN_COUNT_BASE: 10,
-  BOOST_MULTIPLIER: 1.5, // Slightly reduced for balance
+  BOOST_MULTIPLIER: 2.0, // UPDATED: 100% boost (was 1.5)
   SANITY_RECOVERY_PER_TURN: 1,
   SANITY_RECOVERY_BETWEEN_BATTLES: 3, // Increased recovery
   MALFUNCTION_SANITY_RECOVERY: 0.5,
@@ -20,7 +20,7 @@ const GAME_CONFIG = {
   BUBBLE_BASE_POINTS: [1, 2, 3, 5, 8], // Points for different bubble sizes/types
 };
 
-// Fighter Templates with themed abilities and better balance
+// Fighter Templates with themed abilities and updated move sets
 const FIGHTER_TEMPLATES = {
   vanilla: {
     name: "Vanilla",
@@ -43,10 +43,11 @@ const FIGHTER_TEMPLATES = {
         icon: "✨",
         description: "Overwhelm with sprinkles",
       },
-      defend: {
-        name: "Ice Shield",
-        icon: "🧊",
-        description: "Freeze solid for protection",
+      heal: {
+        // UPDATED: Vanilla now has heal instead of defend
+        name: "Cream Restoration",
+        icon: "💖",
+        description: "Restore vanilla smoothness",
       },
       boost: {
         name: "Sugar Rush",
@@ -105,10 +106,11 @@ const FIGHTER_TEMPLATES = {
         icon: "💥",
         description: "Sticky strawberry blast",
       },
-      defend: {
-        name: "Sweet Barrier",
+      heal: {
+        // UPDATED: Strawberry now has heal instead of defend
+        name: "Berry Healing",
         icon: "🌸",
-        description: "Protective fruit shield",
+        description: "Sweet berry regeneration",
       },
       boost: {
         name: "Berry Blitz",
@@ -183,7 +185,7 @@ const ENEMY_TEMPLATES = [
   },
 ];
 
-// Enhanced Move definitions with better balance
+// Enhanced Move definitions with heal move added
 const MOVE_DEFINITIONS = {
   light: {
     name: "Quick Strike",
@@ -225,12 +227,25 @@ const MOVE_DEFINITIONS = {
     name: "Power Up",
     damage: 0,
     baseCost: 3,
-    description: "+50% damage next 3 turns",
+    description: "+100% damage next 3 turns", // UPDATED description
     sanityCosts: {
       vsLight: 3,
       vsHeavy: 5,
       vsDefend: 1,
       vsBoost: 1,
+    },
+  },
+  heal: {
+    // NEW: Heal move definition
+    name: "Heal",
+    damage: 0,
+    baseCost: 3,
+    description: "Restore 30% of max HP",
+    sanityCosts: {
+      vsLight: 4,
+      vsHeavy: 5,
+      vsDefend: 2,
+      vsBoost: 3,
     },
   },
 };
@@ -621,6 +636,7 @@ const AUDIO_CONFIG = {
     heavy: "audio/attack_heavy.mp3",
     defend: "audio/defend.mp3",
     boost: "audio/boost.mp3",
+    heal: "audio/heal.mp3", // NEW: Heal sound
 
     // Talk System
     talkStart: "audio/talk_start.mp3",

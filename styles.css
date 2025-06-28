@@ -124,8 +124,8 @@ h3 {
 
 /* Fighter Images */
 .fighter-image {
-  width: 85%;
-  height: 85%;
+  width: 60%;
+  height: auto;
   object-fit: contain;
   margin: 10px 0;
 }
@@ -154,7 +154,6 @@ h3 {
 
 .fighter-sprite {
   font-size: 60px;
-  margin: 20px 0;
   transition: all var(--transition-normal);
   will-change: transform, filter;
   display: block;
@@ -356,6 +355,40 @@ h3 {
   align-items: center;
 }
 
+/* Malfunction styles for move buttons */
+.move-btn.malfunctioning {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  border: 2px solid #ff9ff3;
+  animation: malfunction-pulse 2s infinite;
+}
+
+@keyframes malfunction-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+  }
+}
+
+.move-btn.malfunctioning .move-icon {
+  animation: malfunction-shake 0.5s infinite;
+}
+
+@keyframes malfunction-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
 #battle-screen .move-btn .move-icon {
   width: 60%;
   height: 90%;
@@ -426,10 +459,10 @@ h3 {
   vertical-align: middle;
 }
 
-/* Tooltips */
+/* Tooltips - UPDATED: Position below buttons */
 .move-tooltip {
   position: absolute;
-  bottom: 100%;
+  top: 100%; /* Changed from bottom: 100% to top: 100% */
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.9);
@@ -443,6 +476,7 @@ h3 {
   transition: opacity var(--transition-normal);
   z-index: 10;
   min-width: 200px;
+  margin-top: 5px; /* Added margin to separate from button */
 }
 
 .move-btn:hover .move-tooltip {
@@ -922,8 +956,36 @@ h3 {
   text-align: center;
 }
 
+/* Game over screen - only apply full screen styles when active */
+#game-over-screen.active {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
 #game-over-screen h1 {
   color: #ff6b6b;
+  font-size: 3em;
+  margin-bottom: 20px;
+}
+
+#game-over-screen .final-score {
+  font-size: 1.5em;
+  margin-bottom: 30px;
+}
+
+#game-over-screen .continue-btn {
+  font-size: 1.2em;
+  padding: 20px 40px;
 }
 
 #victory-screen h1 {
@@ -947,148 +1009,10 @@ h3 {
   font-weight: bold;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .game-container {
-    padding: 20px;
-    margin: 10px;
-  }
-
-  .battle-arena {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .fighter-select {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .fighter-option {
-    max-width: 300px;
-  }
-
-  .move-buttons {
-    grid-template-columns: 1fr;
-  }
-
-  .slot-reels {
-    gap: 10px;
-    font-size: 30px;
-  }
-
-  .fighter-sprite {
-    font-size: 50px;
-  }
-
-  .slot-machine-container {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .slot-paytable {
-    max-width: 100%;
-  }
-
-  /* Better mobile responsiveness for fighter stats */
-  .fighter-stats {
-    font-size: 12px;
-    padding: 8px;
-  }
-}
-
-@media (max-width: 480px) {
-  body {
-    padding: 10px;
-  }
-
-  .game-container {
-    padding: 15px;
-  }
-
-  h1 {
-    font-size: 2em;
-  }
-
-  h2 {
-    font-size: 1.5em;
-  }
-
-  .fighter-sprite {
-    font-size: 40px;
-  }
-
-  .move-tooltip {
-    position: static;
-    transform: none;
-    opacity: 1;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.8);
-    padding: 5px 0;
-    margin-top: 5px;
-  }
-
-  .paytable-row {
-    padding: 6px 8px;
-  }
-
-  .paytable-row .reward {
-    font-size: 11px;
-  }
-}
-
 #training-btns {
   display: flex;
   flex-wrap: wrap;
   align-content: space-between;
-}
-
-/* CSS Custom Properties */
-:root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --talk-gradient: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
-  --hp-gradient: linear-gradient(90deg, #ff6b6b, #ee5a24);
-  --sanity-gradient: linear-gradient(90deg, #48dbfb, #0abde3);
-
-  --background-overlay: rgba(0, 0, 0, 0.3);
-  --card-background: rgba(255, 255, 255, 0.2);
-  --card-background-hover: rgba(255, 255, 255, 0.3);
-
-  --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-
-  --border-radius: 15px;
-  --border-radius-large: 20px;
-  --border-radius-small: 10px;
-
-  --transition-fast: 0.1s;
-  --transition-normal: 0.3s;
-  --transition-slow: 0.8s;
-
-  --font-family: "Comic Sans MS", cursive, sans-serif;
-  --font-size-small: 12px;
-  --font-size-normal: 14px;
-  --font-size-medium: 16px;
-  --font-size-large: 18px;
-  --font-size-xlarge: 24px;
-}
-
-/* Base Styles */
-* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: var(--font-family);
-  background: var(--primary-gradient);
-  color: white;
-  margin: 0;
-  padding: 20px;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 /* Achievement System Styles */
@@ -1252,4 +1176,95 @@ body {
 .achievement-toggle:hover {
   transform: scale(1.05);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .game-container {
+    padding: 20px;
+    margin: 10px;
+  }
+
+  .battle-arena {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .fighter-select {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .fighter-option {
+    max-width: 300px;
+  }
+
+  .move-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .slot-reels {
+    gap: 10px;
+    font-size: 30px;
+  }
+
+  .fighter-sprite {
+    font-size: 50px;
+  }
+
+  .slot-machine-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .slot-paytable {
+    max-width: 100%;
+  }
+
+  /* Better mobile responsiveness for fighter stats */
+  .fighter-stats {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  /* Mobile tooltip positioning */
+  .move-tooltip {
+    position: static;
+    transform: none;
+    opacity: 1;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 5px 0;
+    margin-top: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  .game-container {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 2em;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  .fighter-sprite {
+    font-size: 40px;
+  }
+
+  .paytable-row {
+    padding: 6px 8px;
+  }
+
+  .paytable-row .reward {
+    font-size: 11px;
+  }
 }
