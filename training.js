@@ -567,7 +567,7 @@ class Training {
    * Get cost for training reward (UPDATED progressive pricing for 500-600 points)
    */
   getTrainingCost(rewardType) {
-    const baseCost = 120; // Increased base cost for 500-600 point range
+    const baseCost = 120; // Increased cost for 500-600 point range
     return baseCost + this.game.gameState.trainingPurchases * 80; // Increased progression
   }
 

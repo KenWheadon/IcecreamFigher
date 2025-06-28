@@ -134,8 +134,7 @@ h3 {
 .battle-arena {
   display: flex;
   justify-content: space-between;
-  margin: 30px 0;
-  gap: 50px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -415,9 +414,13 @@ h3 {
 /* Move Buttons */
 .move-buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 10px;
   margin-top: 20px;
+}
+
+#battle-screen h2 {
+  margin-bottom: 10px;
 }
 
 .move-btn {
@@ -437,38 +440,6 @@ h3 {
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
-}
-
-/* Tooltip Toggle Button (? button) */
-.tooltip-toggle {
-  position: absolute;
-  bottom: 5px;
-  left: 5px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
-  color: #333;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  font-size: 12px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-  z-index: 100;
-  font-family: Arial, sans-serif;
-}
-
-.tooltip-toggle:hover {
-  background: rgba(255, 255, 255, 1);
-  transform: scale(1.1);
-}
-
-.tooltip-toggle:focus {
-  outline: 2px solid #48dbfb;
-  outline-offset: 1px;
 }
 
 /* Malfunction styles for move buttons */
@@ -507,7 +478,11 @@ h3 {
 
 #battle-screen .move-btn .move-icon {
   width: 60%;
-  height: 90%;
+  height: auto;
+}
+
+#battle-screen .move-btn {
+  padding: 0px;
 }
 
 #battle-screen .move-btn .attack-text {
@@ -559,7 +534,7 @@ h3 {
 }
 
 .move-cost {
-  font-size: var(--font-size-small);
+  font-size: small;
   opacity: 0.8;
 }
 
@@ -1073,7 +1048,7 @@ h3 {
 }
 
 .screen-image {
-  width: 100%;
+  width: 60%;
   height: auto;
   object-fit: contain;
   display: block;
@@ -1312,7 +1287,7 @@ h3 {
   }
 
   .move-buttons {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
   }
 
   .slot-reels {
@@ -1349,11 +1324,6 @@ h3 {
     color: rgba(255, 255, 255, 0.8);
     padding: 5px 0;
     margin-bottom: 5px;
-  }
-
-  /* Keep tooltip toggle buttons visible on mobile */
-  .tooltip-toggle {
-    display: flex;
   }
 
   /* Mobile stats grid */

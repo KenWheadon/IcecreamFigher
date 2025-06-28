@@ -39,13 +39,13 @@ const FIGHTER_TEMPLATES = {
         description: "A classic vanilla strike",
       },
       heavy: {
-        name: "Sprinkle Blast",
+        name: "Frozen Tip",
         icon: "✨",
-        description: "Overwhelm with sprinkles",
+        description: "Stab with just the tip",
       },
       heal: {
         // UPDATED: Vanilla now has heal instead of defend
-        name: "Cream Restoration",
+        name: "Face Cream",
         icon: "💖",
         description: "Restore vanilla smoothness",
       },
@@ -73,7 +73,7 @@ const FIGHTER_TEMPLATES = {
         description: "Quick chocolate chop",
       },
       heavy: {
-        name: "Dark Eruption",
+        name: "Dark Twist",
         icon: "🌋",
         description: "Explosive cocoa power",
       },
@@ -102,7 +102,7 @@ const FIGHTER_TEMPLATES = {
     moves: {
       light: { name: "Berry Bonk", icon: "🍓", description: "Sweet berry tap" },
       heavy: {
-        name: "Jam Explosion",
+        name: "Jam Pop",
         icon: "💥",
         description: "Sticky strawberry blast",
       },

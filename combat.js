@@ -233,7 +233,7 @@ class Combat {
     const heavyDisplay = document.getElementById("heavy-damage-display");
 
     if (lightDisplay) {
-      let lightText = `Base Cost: 2 | Damage: ${lightFinalDamage}`;
+      let lightText = `Cost: 2 | DMG: ${lightFinalDamage}`;
       if (this.game.gameState.playerBoost) {
         lightText += ` (BOOSTED!)`;
       }
@@ -241,7 +241,7 @@ class Combat {
     }
 
     if (heavyDisplay) {
-      let heavyText = `Base Cost: 4 | Damage: ${heavyFinalDamage}`;
+      let heavyText = `Cost: 4 | DMG: ${heavyFinalDamage}`;
       if (this.game.gameState.playerBoost) {
         heavyText += ` (BOOSTED!)`;
       }

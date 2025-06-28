@@ -410,7 +410,7 @@ class IceCreamFighter {
     if (fighter.moves.heal) {
       const healDisplay = document.getElementById("heal-damage-display");
       if (healDisplay) {
-        healDisplay.textContent = "Base Cost: 3 | Restore 30% HP";
+        healDisplay.textContent = "Cost: 3 | Restore 30% HP";
       }
     }
 
