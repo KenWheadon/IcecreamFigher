@@ -127,10 +127,10 @@ const ENEMY_TEMPLATES = [
     name: "Melty Mike",
     sprite: "🌊",
     image: "images/enemy_1.png",
-    hp: 80, // Increased for balance
-    maxHp: 80,
-    attack: 14, // Slightly increased
-    defense: 6, // Slightly increased
+    hp: 90, // Increased for balance
+    maxHp: 90,
+    attack: 15, // Slightly increased
+    defense: 5, // Slightly increased
     sanity: 10, // Increased
     maxSanity: 10,
     pattern: ["light", "light", "defend", "heavy"],
@@ -139,10 +139,10 @@ const ENEMY_TEMPLATES = [
     name: "Freezer Burn Fred",
     sprite: "❄️",
     image: "images/enemy_2.png",
-    hp: 110, // Increased
-    maxHp: 110,
-    attack: 18, // Increased
-    defense: 12, // Increased
+    hp: 160, // Increased
+    maxHp: 180,
+    attack: 20, // Increased
+    defense: 25, // Increased
     sanity: 14, // Increased
     maxSanity: 14,
     pattern: ["heavy", "defend", "light", "defend", "boost"],
@@ -151,10 +151,10 @@ const ENEMY_TEMPLATES = [
     name: "Sour Sam",
     sprite: "🍋",
     image: "images/enemy_3.png",
-    hp: 140, // Increased
-    maxHp: 140,
-    attack: 22, // Increased
-    defense: 15, // Increased
+    hp: 300, // Increased
+    maxHp: 300,
+    attack: 35, // Increased
+    defense: 10, // Increased
     sanity: 18, // Increased
     maxSanity: 18,
     pattern: ["boost", "heavy", "light", "light", "defend"],
@@ -163,25 +163,25 @@ const ENEMY_TEMPLATES = [
     name: "Rocky Road Roger",
     sprite: "🗿",
     image: "images/enemy_4.png",
-    hp: 180, // Increased
-    maxHp: 180,
-    attack: 26, // Increased
-    defense: 20, // Increased
-    sanity: 22, // Increased
-    maxSanity: 22,
-    pattern: ["defend", "boost", "heavy", "defend", "light", "defend"],
+    hp: 420, // Increased
+    maxHp: 420,
+    attack: 50, // Increased
+    defense: 30, // Increased
+    sanity: 40, // Increased
+    maxSanity: 40,
+    pattern: ["defend", "boost", "heavy", "light", "heavy"],
   },
   {
     name: "Brain Freeze Boss",
     sprite: "🧠",
     image: "images/enemy_5.png",
-    hp: 250, // Significantly increased for final boss
-    maxHp: 250,
-    attack: 32, // Increased
-    defense: 25, // Increased
-    sanity: 30, // Increased
+    hp: 650, // Significantly increased for final boss
+    maxHp: 650,
+    attack: 55, // Increased
+    defense: 50, // Increased
+    sanity: 10, // Increased
     maxSanity: 30,
-    pattern: ["light", "boost", "heavy", "heavy", "defend", "light", "boost"],
+    pattern: ["boost", "heavy", "heavy", "defend", "light", "defend"],
   },
 ];
 
@@ -325,17 +325,25 @@ const SLOT_CONFIG = {
     // Wins (80% total, ~13.33% each)
     { type: "win", symbol: "vanilla" },
     { type: "win", symbol: "vanilla" },
+    { type: "win", symbol: "vanilla" },
     { type: "win", symbol: "chocolate" },
     { type: "win", symbol: "chocolate" },
+    { type: "win", symbol: "chocolate" },
+    { type: "win", symbol: "strawberry" },
     { type: "win", symbol: "strawberry" },
     { type: "win", symbol: "strawberry" },
     { type: "win", symbol: "soft" },
     { type: "win", symbol: "soft" },
     { type: "win", symbol: "ice" },
     { type: "win", symbol: "ice" },
+    { type: "win", symbol: "coin" },
+    { type: "win", symbol: "coin" },
+    { type: "win", symbol: "coin" },
     { type: "win", symbol: "coin" },
     { type: "win", symbol: "coin" },
     // Losses (20% total)
+    { type: "loss" },
+    { type: "loss" },
     { type: "loss" },
     { type: "loss" },
     { type: "loss" },

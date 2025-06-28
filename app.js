@@ -233,7 +233,7 @@ class IceCreamFighter {
     `;
 
     popup.innerHTML = `
-      <img src="images/victory.png" alt="Victory" style="width: 120px; height: 120px; object-fit: contain; margin-bottom: 20px;" />
+      <img src="images/victory.png" alt="Victory" style="width: 100%; height: auto; object-fit: contain; margin-bottom: 20px;" />
       <div style="font-size: 36px; margin-bottom: 20px;">🎉 VICTORY! 🎉</div>
       <div style="font-size: 20px; margin-bottom: 10px; font-weight: bold;">
         You conquered all 5 battles!
