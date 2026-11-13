@@ -197,12 +197,48 @@ class Training {
       // Show mini-game instructions
       this.showTrainingPhaseUI("mini-game");
 
-      this.game.playSound("trainingStart");
-      this.spawnTrainingCones();
-      this.startTrainingTimer();
+      // 3-2-1 countdown so the timer doesn't start before the player is ready
+      this.game.gameState.trainingActive = false;
+      this.runCountdown(target, () => {
+        this.game.gameState.trainingActive = true;
+        this.game.playSound("trainingStart");
+        this.spawnTrainingCones();
+        this.startTrainingTimer();
+      });
     } catch (error) {
       console.error("Failed to start training:", error);
     }
+  }
+
+  /**
+   * Show 3, 2, 1, GO! in the play area, then call done()
+   */
+  runCountdown(target, done) {
+    if (!target) {
+      done();
+      return;
+    }
+    const steps = ["3", "2", "1", "GO!"];
+    const el = document.createElement("div");
+    el.className = "training-countdown";
+    target.appendChild(el);
+
+    let i = 0;
+    const tick = () => {
+      if (i >= steps.length) {
+        el.remove();
+        done();
+        return;
+      }
+      el.textContent = steps[i];
+      el.classList.remove("pop");
+      void el.offsetWidth;
+      el.classList.add("pop");
+      this.game.playSound("buttonClick", 0.4);
+      i++;
+      setTimeout(tick, i === steps.length ? 500 : 800);
+    };
+    tick();
   }
 
   /**
@@ -215,11 +251,11 @@ class Training {
     switch (phase) {
       case "mini-game":
         instructions.textContent =
-          "Click the treats for points! Combo = total clicked!";
+          "Click the treats before they melt! Higher treats = more points. Let one melt and your combo resets!";
         break;
       case "rewards":
         instructions.textContent =
-          "Choose your training rewards and try the risky slots!";
+          "Spend your points on upgrades or gamble on the slots. Unspent points are lost when you continue!";
         break;
     }
   }
@@ -288,10 +324,13 @@ class Training {
           cone.style.bottom = targetHeight + "px";
         }, 50);
 
-        // Remove cone after timeout - IMPROVED: No combo reset when cones expire
+        // Cone melts away if not clicked in time, which breaks the combo
         setTimeout(() => {
           if (cone.parentNode) {
             cone.remove();
+            if (this.game.gameState.trainingActive) {
+              this.breakCombo(target);
+            }
           }
         }, GAME_CONFIG.TRAINING_BUBBLE_LIFETIME);
       }
@@ -309,7 +348,22 @@ class Training {
   }
 
   /**
-   * Collect a training cone (IMPROVED: combo = total bubbles clicked)
+   * Reset the combo when a treat melts
+   */
+  breakCombo(target) {
+    if (this.game.gameState.trainingCombo === 0) return;
+    this.game.gameState.trainingCombo = 0;
+    this.game.updateElement("combo-counter", "0");
+    if (target) {
+      target.classList.remove("combo-lost");
+      void target.offsetWidth;
+      target.classList.add("combo-lost");
+      setTimeout(() => target.classList.remove("combo-lost"), 500);
+    }
+  }
+
+  /**
+   * Collect a training cone. Combo = treats caught in a row without one melting.
    */
   collectCone(cone, points) {
     try {
@@ -656,15 +710,15 @@ class Training {
     }
     if (
       rewardType === "sanity" &&
-      player.maxSanity > 100 &&
-      preUpgradeStats.sanity <= 100
+      player.maxSanity > 30 &&
+      preUpgradeStats.sanity <= 30
     ) {
       this.game.unlockAchievement("sanity_100");
     }
     if (
       rewardType === "health" &&
-      player.maxHp > 300 &&
-      preUpgradeStats.hp <= 300
+      player.maxHp > 250 &&
+      preUpgradeStats.hp <= 250
     ) {
       this.game.unlockAchievement("hp_300");
     }
@@ -700,8 +754,23 @@ class Training {
     const nextCost = 10 + this.game.gameState.slotSpins * 15; // Updated cost progression
     const spinBtn = document.getElementById("spin-btn");
     if (spinBtn) {
-      spinBtn.disabled = this.game.gameState.trainingScore < nextCost;
+      spinBtn.disabled =
+        this.isSpinning || this.game.gameState.trainingScore < nextCost;
     }
+    this.updateContinueLabel();
+  }
+
+  /**
+   * Warn on the Continue button when points would be thrown away
+   */
+  updateContinueLabel() {
+    const continueBtn = document.getElementById("continue-training");
+    if (!continueBtn) return;
+    const left = this.game.gameState.trainingScore;
+    continueBtn.textContent =
+      left > 0
+        ? `Continue to Next Battle (${left} unspent points will be lost)`
+        : "Continue to Next Battle";
   }
 
   /**
@@ -788,7 +857,10 @@ class Training {
       return;
     }
 
+    if (this.isSpinning) return;
+
     try {
+      this.isSpinning = true;
       this.game.gameState.trainingScore -= cost;
       this.game.gameState.slotSpins++;
 
@@ -806,6 +878,19 @@ class Training {
 
       // SIMPLIFIED: Get result from simple results array
       const result = CONFIG_UTILS.getSlotResult();
+
+      // For a loss, pick three symbols that are NOT all the same
+      let lossSymbols = null;
+      if (result.type !== "win") {
+        do {
+          lossSymbols = [0, 1, 2].map(() =>
+            CONFIG_UTILS.getRandomElement(SLOT_CONFIG.symbols)
+          );
+        } while (
+          lossSymbols[0].name === lossSymbols[1].name &&
+          lossSymbols[1].name === lossSymbols[2].name
+        );
+      }
 
       // Animate reels
       const reels = ["reel1", "reel2", "reel3"];
@@ -854,9 +939,8 @@ class Training {
                   }
                 }
               } else {
-                // Show random different symbols for loss
-                const lossSymbols = SLOT_CONFIG.symbols.slice(); // Copy array
-                const differentSymbol = lossSymbols[index % lossSymbols.length];
+                // Show this reel's losing symbol
+                const differentSymbol = lossSymbols[index];
                 if (reelContent.tagName === "IMG") {
                   reelContent.src = `images/slot_${differentSymbol.name}.png`;
                   reelContent.alt = differentSymbol.name;
@@ -867,6 +951,7 @@ class Training {
             }
 
             if (index === 2) {
+              this.isSpinning = false;
               this.checkSimpleSlotResults(result);
             }
           }
@@ -875,6 +960,7 @@ class Training {
 
       this.updateSlotButtonState();
     } catch (error) {
+      this.isSpinning = false;
       console.error("Failed to spin slots:", error);
     }
   }

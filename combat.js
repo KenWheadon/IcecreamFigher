@@ -18,10 +18,19 @@ class Combat {
 
       btn.addEventListener("mouseenter", (e) => {
         const moveType = e.currentTarget.dataset.move;
-        this.game.playSound("buttonHover");
+        this.game.playSound("buttonHover", 0.25);
         this.updateTooltip(moveType);
       });
     });
+
+    // Pep Talk button (spend your turn to restore sanity)
+    const talkBtn = document.getElementById("btn-talk");
+    if (talkBtn) {
+      talkBtn.addEventListener("click", () => {
+        this.game.playSound("buttonClick");
+        this.startTalk();
+      });
+    }
 
     // Tooltip toggle buttons
     document.querySelectorAll(".tooltip-toggle").forEach((toggleBtn) => {
@@ -65,6 +74,7 @@ class Combat {
       }
 
       this.game.gameState.enemy = { ...enemyTemplate };
+      this.game.environment?.setStage(this.game.gameState.currentBattle);
       this.game.gameState.turnCount = 0;
       this.game.gameState.isPlayerTurn = true;
       this.game.gameState.playerBoost = false;
@@ -77,22 +87,39 @@ class Combat {
       // Add malfunction tracking
       this.game.gameState.malfunctionedMove = null;
 
-      // Restore some sanity between battles
-      this.game.gameState.player.sanity = Math.min(
-        this.game.gameState.player.sanity +
-          GAME_CONFIG.SANITY_RECOVERY_BETWEEN_BATTLES,
-        this.game.gameState.player.maxSanity
+      // Fresh log for each battle
+      const log = document.getElementById("battle-log");
+      if (log) log.innerHTML = "";
+
+      this.game.addBattleLog(
+        `Battle ${this.game.gameState.currentBattle} begins! ${this.game.gameState.enemy.name} appears!`
       );
 
-      // Apply initial malfunction for first turn
-      this.applyTurnMalfunction();
+      // Restore some sanity and HP between battles
+      const player = this.game.gameState.player;
+      player.sanity = Math.min(
+        player.sanity + GAME_CONFIG.SANITY_RECOVERY_BETWEEN_BATTLES,
+        player.maxSanity
+      );
+      if (this.game.gameState.currentBattle > 1) {
+        const oldHp = player.hp;
+        player.hp = Math.min(
+          player.maxHp,
+          player.hp +
+            Math.floor(player.maxHp * GAME_CONFIG.HP_RECOVERY_BETWEEN_BATTLES)
+        );
+        if (player.hp > oldHp) {
+          this.game.addBattleLog(
+            `💚 You rested between fights and recovered ${player.hp - oldHp} HP.`
+          );
+        }
+      }
+
+      // No jam on the first turn of a battle
+      this.resetMalfunction();
 
       this.updateBattleUI();
       this.updateMoveButtonDamage();
-      this.game.addBattleLog(
-        `Battle ${this.game.gameState.currentBattle} begins!`
-      );
-      this.game.addBattleLog(`${this.game.gameState.enemy.name} appears!`);
       this.game.playSound("battleStart");
     } catch (error) {
       console.error("Failed to start battle:", error);
@@ -106,18 +133,16 @@ class Combat {
    * Apply malfunction to one random attack move for the turn
    */
   applyTurnMalfunction() {
-    // Only malfunction attack moves (light and heavy)
-    const attackMoves = ["light", "heavy"];
-    this.game.gameState.malfunctionedMove =
-      CONFIG_UTILS.getRandomElement(attackMoves);
-
-    this.game.addBattleLog(
-      `⚡ ${
-        this.game.gameState.malfunctionedMove === "light"
-          ? "Light attack"
-          : "Heavy attack"
-      } is malfunctioning this turn!`
-    );
+    // "Jammed": occasionally one attack move can't be used this turn
+    this.game.gameState.malfunctionedMove = null;
+    if (Math.random() < GAME_CONFIG.JAM_CHANCE) {
+      const attackMoves = ["light", "heavy"];
+      const jammed = CONFIG_UTILS.getRandomElement(attackMoves);
+      this.game.gameState.malfunctionedMove = jammed;
+      this.game.addBattleLog(
+        `🔧 ${this.getPlayerMoveName(jammed)} is jammed this turn!`
+      );
+    }
 
     // Update button visual
     this.updateMalfunctionUI();
@@ -141,9 +166,11 @@ class Combat {
         }
       }
 
-      // Clear malfunction class and re-enable
+      // Clear jam styling; enabled state follows whose turn it is
       btn.classList.remove("malfunctioning");
-      btn.disabled = false;
+      btn.disabled =
+        !this.game.gameState.isPlayerTurn ||
+        this.game.gameState.isMalfunctioning;
     });
 
     // STEP 2: Apply malfunction to the selected move
@@ -194,9 +221,11 @@ class Combat {
         icon.style.filter = "none";
       }
 
-      // Remove malfunction class and re-enable button
+      // Remove jam styling; enabled state follows whose turn it is
       btn.classList.remove("malfunctioning");
-      btn.disabled = false;
+      btn.disabled =
+        !this.game.gameState.isPlayerTurn ||
+        this.game.gameState.isMalfunctioning;
     });
   }
 
@@ -233,7 +262,7 @@ class Combat {
     const heavyDisplay = document.getElementById("heavy-damage-display");
 
     if (lightDisplay) {
-      let lightText = `Cost: 2 | DMG: ${lightFinalDamage}`;
+      let lightText = `Cost: ${MOVE_DEFINITIONS.light.baseCost} | DMG: ${lightFinalDamage}`;
       if (this.game.gameState.playerBoost) {
         lightText += ` (BOOSTED!)`;
       }
@@ -241,12 +270,37 @@ class Combat {
     }
 
     if (heavyDisplay) {
-      let heavyText = `Cost: 4 | DMG: ${heavyFinalDamage}`;
+      let heavyText = `Cost: ${MOVE_DEFINITIONS.heavy.baseCost} | DMG: ${heavyFinalDamage}`;
       if (this.game.gameState.playerBoost) {
         heavyText += ` (BOOSTED!)`;
       }
       heavyDisplay.textContent = heavyText;
     }
+
+    // Keep the other buttons' cost text in sync with config
+    const otherCosts = {
+      defend: "Block next hit",
+      heal: "Restore 30% HP",
+      boost: `${this.boostPercentText()} dmg, 3 attacks`,
+    };
+    Object.entries(otherCosts).forEach(([moveType, effect]) => {
+      const el = document.querySelector(`#btn-${moveType} .move-cost`);
+      if (el) {
+        el.textContent = `Cost: ${MOVE_DEFINITIONS[moveType].baseCost} | ${effect}`;
+      }
+    });
+
+    // Pre-fill tooltips so they have content on hover, focus or touch
+    ["light", "heavy", "defend", "heal", "boost"].forEach((moveType) =>
+      this.updateTooltip(moveType)
+    );
+  }
+
+  /**
+   * Boost multiplier as player-facing text, e.g. 2.0 -> "+100%"
+   */
+  boostPercentText() {
+    return `+${Math.round((GAME_CONFIG.BOOST_MULTIPLIER - 1) * 100)}%`;
   }
 
   /**
@@ -276,6 +330,27 @@ class Combat {
 
       // Update malfunction UI
       this.updateMalfunctionUI();
+
+      // Warn on moves that would drop you to 0 sanity (meltdown)
+      const sanity = this.game.gameState.player.sanity;
+      document.querySelectorAll(".move-btn[data-move]").forEach((btn) => {
+        const def = MOVE_DEFINITIONS[btn.dataset.move];
+        btn.classList.toggle(
+          "will-meltdown",
+          Boolean(def) && sanity - def.baseCost <= 0
+        );
+      });
+
+      // Pep Talk: only useful when sanity isn't (nearly) full
+      const talkBtn = document.getElementById("btn-talk");
+      if (talkBtn) {
+        talkBtn.disabled =
+          !this.game.gameState.isPlayerTurn ||
+          this.game.gameState.isMalfunctioning ||
+          sanity >= this.game.gameState.player.maxSanity - 1;
+      }
+
+      this.updateEnemyIntent();
 
       // Update damage display whenever UI updates
       this.updateMoveButtonDamage();
@@ -348,16 +423,58 @@ class Combat {
 
       let statsText = `Attack: ${fighter.attack} | Defense: ${fighter.defense}`;
 
-      // Show boost status
+      // Show boost / shield status
       if (type === "player" && this.game.gameState.playerBoost) {
-        statsText += ` | BOOSTED (${this.game.gameState.playerBoostTurns} turns left)`;
+        statsText += ` | BOOSTED (${this.game.gameState.playerBoostTurns} attacks left)`;
       }
       if (type === "enemy" && this.game.gameState.enemyBoost) {
-        statsText += ` | BOOSTED (${this.game.gameState.enemyBoostTurns} turns left)`;
+        statsText += ` | BOOSTED (${this.game.gameState.enemyBoostTurns} attacks left)`;
+      }
+      if (type === "enemy" && this.game.gameState.enemyDefending) {
+        statsText += ` | 🛡️ SHIELDED`;
       }
 
       battleStatsDiv.innerHTML = `<div>${statsText}</div>`;
     }
+  }
+
+  /**
+   * Show what the enemy will do next (its pattern is fixed, so telegraph it)
+   */
+  updateEnemyIntent() {
+    const el = document.getElementById("enemy-intent");
+    const state = this.game.gameState;
+    if (!el || !state.enemy || !state.player) return;
+
+    const pattern = state.enemy.pattern;
+    const nextType = pattern[state.turnCount % pattern.length];
+    const next = MOVE_DEFINITIONS[nextType];
+    if (!next) {
+      el.textContent = "";
+      return;
+    }
+
+    let text;
+    let danger = false;
+    if (state.enemy.sanity - next.baseCost <= 0) {
+      text = `🌀 Next: ${next.name}, but they're about to melt down!`;
+    } else if (nextType === "light" || nextType === "heavy") {
+      let dmg = next.damage + state.enemy.attack;
+      if (state.enemyBoost) dmg = Math.floor(dmg * GAME_CONFIG.BOOST_MULTIPLIER);
+      const final = CONFIG_UTILS.calculateDamage(dmg, state.player.defense);
+      text = `⚔️ Next: ${next.name}${state.enemyBoost ? " (BOOSTED)" : ""} ~${final} dmg`;
+      danger = final >= state.player.hp;
+      if (danger) text += " ☠️ LETHAL";
+    } else if (nextType === "defend") {
+      text = `🛡️ Next: ${next.name} (blocks your next attack)`;
+    } else if (nextType === "boost") {
+      text = `⚡ Next: ${next.name} (their attacks get ${this.boostPercentText()})`;
+    } else {
+      text = `Next: ${next.name}`;
+    }
+
+    el.textContent = text;
+    el.classList.toggle("danger", danger);
   }
 
   /**
@@ -436,9 +553,6 @@ class Combat {
     switch (moveType) {
       case "defend":
         this.game.addAnimationClass(playerSprite, "defend-animation");
-        this.game.addBattleLog(
-          `${this.game.gameState.player.name} raises a protective barrier!`
-        );
         this.game.gameState.playerDefending = true;
         break;
 
@@ -447,7 +561,7 @@ class Combat {
         this.game.gameState.playerBoostTurns = 3; // Set to 3 turns
         this.game.addAnimationClass(playerSprite, "boost-animation");
         this.game.addBattleLog(
-          `${this.game.gameState.player.name} powers up! Next 3 attacks will deal +50% damage!`
+          `Next 3 attacks deal ${this.boostPercentText()} damage!`
         );
         break;
 
@@ -462,11 +576,7 @@ class Combat {
         const actualHealed = this.game.gameState.player.hp - oldHp;
 
         this.game.addAnimationClass(playerSprite, "boost-animation"); // Reuse boost animation for healing glow
-        this.game.addBattleLog(
-          `${this.game.gameState.player.name} uses ${this.getPlayerMoveName(
-            moveType
-          )} and restores ${actualHealed} HP!`
-        );
+        this.game.addBattleLog(`Restored ${actualHealed} HP!`);
         this.game.showDamageNumber(playerSprite, actualHealed, true); // Show as heal number (green)
         break;
 
@@ -496,12 +606,6 @@ class Combat {
               `Power up turns remaining: ${this.game.gameState.playerBoostTurns}`
             );
           }
-        } else {
-          this.game.addBattleLog(
-            `${this.game.gameState.player.name} uses ${this.getPlayerMoveName(
-              moveType
-            )}!`
-          );
         }
 
         if (!this.game.gameState.enemyDefending) {
@@ -514,6 +618,7 @@ class Combat {
             this.game.gameState.enemy.hp - finalDamage
           );
           this.game.addAnimationClass(enemySprite, "hit-animation");
+          this.game.environment?.impact(moveType === "heavy");
           this.game.showDamageNumber(enemySprite, finalDamage);
           this.game.addBattleLog(
             `Dealt ${finalDamage} damage to ${this.game.gameState.enemy.name}!`
@@ -535,6 +640,8 @@ class Combat {
    */
   finishPlayerTurn() {
     this.game.clearAnimations();
+    // The enemy's shield only lasts through the player's next move
+    this.game.gameState.enemyDefending = false;
     this.updateBattleUI();
 
     if (this.game.gameState.enemy.hp <= 0) {
@@ -553,18 +660,6 @@ class Combat {
    * Execute enemy move
    */
   executeEnemyMove() {
-    if (this.game.gameState.enemy.sanity <= 0) {
-      this.game.addBattleLog(
-        `${this.game.gameState.enemy.name} is having a meltdown and skips their turn!`
-      );
-      this.game.gameState.enemy.sanity = Math.floor(
-        this.game.gameState.enemy.maxSanity *
-          GAME_CONFIG.MALFUNCTION_SANITY_RECOVERY
-      );
-      this.finishEnemyTurn();
-      return;
-    }
-
     try {
       const patternIndex =
         this.game.gameState.turnCount %
@@ -586,6 +681,23 @@ class Combat {
         0,
         this.game.gameState.enemy.sanity - sanityCost
       );
+      // Enemy pushed itself to 0 sanity: same rule as the player, the move is lost
+      if (this.game.gameState.enemy.sanity <= 0) {
+        this.game.addBattleLog(
+          `🌀 ${this.game.gameState.enemy.name} tried to use ${enemyMove.name} but had a meltdown! Their turn is wasted.`
+        );
+        this.game.gameState.enemy.sanity = Math.floor(
+          this.game.gameState.enemy.maxSanity *
+            GAME_CONFIG.MALFUNCTION_SANITY_RECOVERY
+        );
+        this.game.addAnimationClass(enemySprite, "hit-animation");
+        setTimeout(
+          () => this.finishEnemyTurn(),
+          GAME_CONFIG.ANIMATION_DURATION
+        );
+        return;
+      }
+
       this.game.addBattleLog(
         `${this.game.gameState.enemy.name} uses ${enemyMove.name}, costing ${sanityCost} sanity!`
       );
@@ -594,7 +706,7 @@ class Combat {
         case "defend":
           this.game.addAnimationClass(enemySprite, "defend-animation");
           this.game.addBattleLog(
-            `${this.game.gameState.enemy.name} takes a defensive stance!`
+            `${this.game.gameState.enemy.name} takes a defensive stance! Your next attack will be blocked.`
           );
           this.game.gameState.enemyDefending = true;
           break;
@@ -630,10 +742,6 @@ class Combat {
                 `${this.game.gameState.enemy.name}'s power up expired!`
               );
             }
-          } else {
-            this.game.addBattleLog(
-              `${this.game.gameState.enemy.name} uses ${enemyMove.name}!`
-            );
           }
 
           if (!this.game.gameState.playerDefending) {
@@ -646,6 +754,7 @@ class Combat {
               this.game.gameState.player.hp - finalDamage
             );
             this.game.addAnimationClass(playerSprite, "hit-animation");
+            this.game.environment?.impact(enemyMoveType === "heavy");
             this.game.showDamageNumber(playerSprite, finalDamage);
             this.game.addBattleLog(`You took ${finalDamage} damage!`);
             this.game.playSound("takeDamage");
@@ -670,8 +779,9 @@ class Combat {
   finishEnemyTurn() {
     this.game.clearAnimations();
 
+    // Player's shield only lasts through the enemy's move.
+    // enemyDefending is cleared in finishPlayerTurn so it can block the player's next attack.
     this.game.gameState.playerDefending = false;
-    this.game.gameState.enemyDefending = false;
 
     if (this.game.gameState.player.hp <= 0) {
       this.game.gameOverScreen.gameOver("Your fighter melted!");
@@ -767,8 +877,8 @@ class Combat {
 
       html += `<div style="margin-top: 8px;"><strong>Damage Calculation:</strong></div>`;
       if (this.game.gameState.playerBoost) {
-        html += `<div>${baseDamage} (base) + ${playerAttack} (attack) × 1.5 (boost) - ${enemyDefense} (enemy def) = ${finalDamage}</div>`;
-        html += `<div style="color: #f5576c; font-weight: bold;">BOOSTED: ${finalDamage} damage! (${this.game.gameState.playerBoostTurns} turns left)</div>`;
+        html += `<div>(${baseDamage} (base) + ${playerAttack} (attack)) × ${GAME_CONFIG.BOOST_MULTIPLIER} (boost) - ${enemyDefense} (enemy def) = ${finalDamage}</div>`;
+        html += `<div style="color: #f5576c; font-weight: bold;">BOOSTED: ${finalDamage} damage! (${this.game.gameState.playerBoostTurns} boosted attacks left)</div>`;
       } else {
         html += `<div>${baseDamage} (base) + ${playerAttack} (attack) - ${enemyDefense} (enemy def) = ${finalDamage}</div>`;
       }
@@ -790,12 +900,13 @@ class Combat {
       }
     }
 
-    html +=
-      '<div style="margin-top: 8px;">Sanity cost depends on enemy action:</div>';
-    html += `<div class="tooltip-row">vs Light Attack: <span class="sanity-preview">-${move.sanityCosts.vsLight}</span></div>`;
-    html += `<div class="tooltip-row">vs Heavy Attack: <span class="sanity-preview">-${move.sanityCosts.vsHeavy}</span></div>`;
-    html += `<div class="tooltip-row">vs Defend: <span class="sanity-preview">-${move.sanityCosts.vsDefend}</span></div>`;
-    html += `<div class="tooltip-row">vs Boost: <span class="sanity-preview">-${move.sanityCosts.vsBoost}</span></div>`;
+    html += `<div class="tooltip-row" style="margin-top: 8px;">Sanity cost: <span class="sanity-preview">-${move.baseCost}</span></div>`;
+    if (
+      this.game.gameState.player &&
+      this.game.gameState.player.sanity - move.baseCost <= 0
+    ) {
+      html += `<div style="color: #ff6b6b; font-weight: bold;">⚠ This will drop you to 0 sanity and cause a meltdown!</div>`;
+    }
 
     tooltip.innerHTML = html;
   }
@@ -814,6 +925,7 @@ class Combat {
 
     try {
       this.game.gameState.isPlayerTurn = false;
+      this.updateBattleUI();
       this.game.playSound("talkStart");
 
       const fighterType = this.game.gameState.selectedFighterType || "vanilla";
@@ -890,6 +1002,8 @@ class Combat {
       }
     }
 
+    // Talking used up the player's turn, so the enemy's shield expires
+    this.game.gameState.enemyDefending = false;
     this.updateBattleUI();
 
     setTimeout(() => {
@@ -906,6 +1020,8 @@ class Combat {
    */
   triggerMalfunction() {
     this.game.gameState.isMalfunctioning = true;
+    // The player's turn is spent, so the enemy's shield from last turn expires
+    this.game.gameState.enemyDefending = false;
     this.game.addBattleLog(
       `${this.game.gameState.player.name} is having a meltdown!`
     );
@@ -975,8 +1091,31 @@ class Combat {
         this.executeEnemyMove();
       }, 1000);
     } else {
-      this.game.addBattleLog("Your words didn't help!");
+      // Wrong words make the meltdown worse: lose some HP, then try again
+      const player = this.game.gameState.player;
+      const penalty = Math.max(
+        1,
+        Math.floor(player.maxHp * GAME_CONFIG.TALKDOWN_FAIL_HP_PENALTY)
+      );
+      player.hp = Math.max(0, player.hp - penalty);
+      this.game.playSound("talkFail");
+      this.game.addBattleLog(
+        `Your words made it worse! ${player.name} melted a little (-${penalty} HP).`
+      );
+
+      if (player.hp <= 0) {
+        this.game.gameState.isMalfunctioning = false;
+        this.game.gameOverScreen.gameOver(
+          "Your fighter melted down completely!"
+        );
+        return;
+      }
+
       this.startTalkDown();
+      const malfunctionText = document.getElementById("malfunction-text");
+      if (malfunctionText) {
+        malfunctionText.textContent = `That made it worse! (-${penalty} HP, ${player.hp}/${player.maxHp} left) ${malfunctionText.textContent}`;
+      }
     }
   }
 }

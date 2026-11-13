@@ -414,7 +414,7 @@ h3 {
 /* Move Buttons */
 .move-buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-top: 20px;
 }
@@ -583,9 +583,25 @@ h3 {
   visibility: visible;
 }
 
-/* Remove old hover behavior */
-.move-btn:hover .move-tooltip {
-  /* Removed hover behavior - now controlled by click */
+/* Show tooltips on hover / keyboard focus on devices with a real pointer */
+/* Keep edge tooltips from hanging off the side of the game */
+#move-buttons .move-btn:first-child .move-tooltip {
+  left: 0;
+  transform: none;
+}
+
+#move-buttons .move-btn:last-child .move-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+@media (hover: hover) {
+  #move-buttons .move-btn:hover .move-tooltip,
+  #move-buttons .move-btn:focus-visible .move-tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 .tooltip-row {
@@ -721,13 +737,7 @@ h3 {
   transform: none;
 }
 
-#bonus-reward {
-  display: none;
-}
-
-#bonus-reward.available {
-  display: block;
-}
+/* +HP reward is always offered (it used to be hidden below 500 points) */
 
 /* Enhanced Slot Machine */
 .slot-machine-container {
@@ -1200,8 +1210,16 @@ h3 {
 }
 
 .achievement-item.locked {
-  opacity: 0.4;
+  opacity: 0.7;
   filter: grayscale(80%);
+}
+
+.achievement-desc {
+  font-size: 11px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4px;
+  line-height: 1.2;
 }
 
 .achievement-item:hover {
@@ -1214,7 +1232,7 @@ h3 {
 }
 
 .achievement-name {
-  font-size: 10px;
+  font-size: 12px;
   text-align: center;
   font-weight: bold;
   color: white;
@@ -1265,8 +1283,536 @@ h3 {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
+/* ============================================
+   Onboarding, feedback and accessibility additions
+   ============================================ */
+
+/* Fighter select: pick a card, then confirm */
+.fighter-option.selected {
+  border-color: #48dbfb;
+  background: var(--card-background-hover);
+  box-shadow: 0 0 20px rgba(72, 219, 251, 0.7);
+  transform: scale(1.05);
+}
+
+#confirm-fighter:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Enemy's next move */
+.enemy-intent {
+  min-height: 1.4em;
+  margin: -4px 0 6px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffeaa7;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.enemy-intent.danger {
+  color: #ff6b6b;
+  animation: intent-pulse 1s ease-in-out infinite;
+}
+
+@keyframes intent-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Moves that would drop sanity to 0 */
+.move-btn.will-meltdown:not(:disabled) {
+  box-shadow: 0 0 0 2px #ff6b6b inset;
+}
+
+.move-btn.will-meltdown:not(:disabled)::after {
+  content: "⚠ meltdown";
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 10px;
+  color: #ffd1d1;
+  background: rgba(150, 0, 0, 0.7);
+  border-radius: 6px;
+  padding: 1px 5px;
+}
+
+/* Newest battle log line stands out */
+.battle-log div:last-child {
+  font-weight: bold;
+  color: #ffeaa7;
+}
+
+/* Sound + help buttons */
+.mute-toggle,
+.help-toggle {
+  position: fixed;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 999;
+  font-family: var(--font-family);
+}
+
+.mute-toggle {
+  top: 20px;
+}
+
+.help-toggle {
+  top: 70px;
+  display: none;
+}
+
+body[data-screen="battle-screen"] .help-toggle {
+  display: block;
+}
+
+.mute-toggle:focus-visible,
+.help-toggle:focus-visible,
+.achievement-toggle:focus-visible {
+  outline: 3px solid #48dbfb;
+  outline-offset: 2px;
+}
+
+/* How to play */
+.howto-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 10001;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.howto-overlay.open {
+  display: flex;
+}
+
+.howto-panel {
+  background: var(--primary-gradient);
+  border: 3px solid white;
+  border-radius: var(--border-radius-large);
+  padding: 24px;
+  max-width: 760px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--box-shadow);
+}
+
+.howto-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.howto-card {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--border-radius);
+  padding: 14px;
+}
+
+.howto-card h3 {
+  margin: 4px 0;
+}
+
+.howto-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.howto-icon {
+  font-size: 28px;
+}
+
+.howto-skip {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .howto-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Training countdown + combo break */
+.training-countdown {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  font-weight: bold;
+  text-shadow: var(--text-shadow);
+  pointer-events: none;
+}
+
+.training-countdown.pop {
+  animation: countdown-pop 0.6s ease-out;
+}
+
+@keyframes countdown-pop {
+  from { transform: scale(1.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.training-target.combo-lost {
+  animation: combo-lost 0.4s ease;
+}
+
+@keyframes combo-lost {
+  0%, 100% { border-color: rgba(255, 255, 255, 0.3); }
+  50% { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.2); }
+}
+
+/* ============================================
+   Battle Environment - "Inside the Freezer"
+   ============================================ */
+
+#battle-screen > *:not(.battle-background):not(.env-banner) {
+  position: relative;
+  z-index: 1;
+}
+
+#battle-screen h2 {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.battle-background {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  background: #1d2b3f;
+  --env-tint: linear-gradient(180deg, rgba(20, 40, 80, 0.35), rgba(5, 15, 40, 0.65));
+  --env-filter: saturate(0.9) brightness(0.85);
+  --env-light: rgba(200, 235, 255, 0.35);
+  --env-mist: rgba(220, 240, 255, 0.35);
+  --env-floor: rgba(210, 235, 255, 0.55);
+  --env-frost: rgba(235, 248, 255, 0.55);
+}
+
+.battle-background > div,
+.battle-background > canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.env-backdrop {
+  background: url("images/bg.png") center 30% / cover no-repeat;
+  filter: var(--env-filter);
+  transform: scale(1.08);
+  animation: env-drift 30s ease-in-out infinite alternate;
+  transition: filter 1s ease;
+}
+
+.env-tint {
+  background: var(--env-tint);
+  transition: background 1s ease;
+}
+
+/* Cone of light from the freezer vent / door */
+.env-light {
+  background: radial-gradient(
+    ellipse 55% 45% at 50% 0%,
+    var(--env-light),
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  animation: env-light-breathe 6s ease-in-out infinite;
+}
+
+.env-particles {
+  width: 100%;
+  height: 100%;
+}
+
+.env-mist {
+  inset: auto -20% 0 -20% !important;
+  height: 40%;
+  background: radial-gradient(
+      ellipse 30% 60% at 20% 100%,
+      var(--env-mist),
+      transparent 70%
+    ),
+    radial-gradient(ellipse 35% 50% at 70% 100%, var(--env-mist), transparent 70%);
+  filter: blur(6px);
+}
+
+.env-mist-back {
+  opacity: 0.7;
+  animation: env-mist-move 22s ease-in-out infinite alternate;
+}
+
+.env-mist-front {
+  height: 25%;
+  opacity: 0.55;
+  animation: env-mist-move 15s ease-in-out infinite alternate-reverse;
+}
+
+/* Icy floor the fight happens on */
+.env-floor {
+  inset: auto 0 0 0 !important;
+  height: 38%;
+  background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.25) 25%,
+      rgba(0, 0, 0, 0.55) 100%
+    ),
+    repeating-linear-gradient(
+      100deg,
+      transparent 0 60px,
+      rgba(255, 255, 255, 0.05) 60px 62px
+    );
+}
+
+/* Frost creeping in from the edges */
+.env-frost {
+  box-shadow: inset 0 0 60px 10px var(--env-frost),
+    inset 0 0 160px 30px rgba(0, 0, 0, 0.45);
+  border-radius: inherit;
+  transition: box-shadow 1s ease;
+}
+
+.env-flash {
+  background: rgba(255, 255, 255, 0.6);
+  opacity: 0;
+}
+
+.env-flash.show {
+  animation: env-flash 0.35s ease-out;
+}
+
+/* Zone name banner shown at the start of each battle */
+.env-banner {
+  position: absolute;
+  top: 30%;
+  left: 0;
+  right: 0;
+  padding: 18px 10px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(5, 15, 35, 0.75) 20%,
+    rgba(5, 15, 35, 0.75) 80%,
+    transparent
+  );
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.9);
+}
+
+.env-banner.show {
+  animation: env-banner 3.2s ease forwards;
+}
+
+.env-banner-name {
+  font-size: 34px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.env-banner-sub {
+  font-size: 16px;
+  opacity: 0.85;
+  font-style: italic;
+}
+
+/* Icy platform under each fighter */
+#battle-screen .fighter-sprite {
+  position: relative;
+}
+
+#battle-screen .fighter-sprite::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 70%;
+  height: 26px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(230, 248, 255, 0.85) 0%,
+    rgba(160, 210, 255, 0.45) 45%,
+    transparent 72%
+  );
+  box-shadow: 0 0 25px rgba(160, 220, 255, 0.5);
+  z-index: -1;
+}
+
+#battle-screen .fighter-image {
+  position: relative;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.5));
+}
+
+/* Glassy, frosted cards so the scene shows through */
+#battle-screen .fighter-card {
+  background: rgba(15, 30, 55, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+#battle-screen .battle-log {
+  background: rgba(5, 15, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Screen shake on hits */
+.battle-background.env-shake {
+  animation: env-shake 0.3s linear;
+}
+
+.battle-background.env-shake-heavy {
+  animation: env-shake-heavy 0.45s linear;
+}
+
+/* ---- Zone themes ---- */
+
+/* 1. The Freezer Door: warm kitchen light spilling in */
+.battle-background[data-theme="door"] {
+  --env-tint: linear-gradient(
+    110deg,
+    rgba(255, 190, 110, 0.35) 0%,
+    rgba(255, 170, 90, 0.08) 35%,
+    rgba(20, 40, 80, 0.4) 100%
+  );
+  --env-filter: saturate(1) brightness(0.95);
+  --env-light: rgba(255, 220, 160, 0.4);
+  --env-frost: rgba(255, 230, 200, 0.25);
+}
+
+/* 2. The Frost Shelf: classic icy blue */
+.battle-background[data-theme="frost"] {
+  --env-tint: linear-gradient(180deg, rgba(120, 190, 255, 0.25), rgba(10, 30, 70, 0.6));
+  --env-filter: saturate(0.8) brightness(0.9) hue-rotate(-5deg);
+  --env-light: rgba(190, 235, 255, 0.45);
+  --env-frost: rgba(240, 250, 255, 0.75);
+}
+
+/* 3. The Crisper Drawer: sour green-yellow */
+.battle-background[data-theme="sour"] {
+  --env-tint: linear-gradient(180deg, rgba(200, 255, 80, 0.25), rgba(30, 70, 20, 0.6));
+  --env-filter: saturate(1.2) brightness(0.85) hue-rotate(-40deg);
+  --env-light: rgba(230, 255, 120, 0.35);
+  --env-mist: rgba(210, 255, 140, 0.35);
+  --env-frost: rgba(220, 255, 150, 0.4);
+}
+
+/* 4. The Back Corner: dim, dusty, brown */
+.battle-background[data-theme="rocky"] {
+  --env-tint: linear-gradient(180deg, rgba(110, 70, 40, 0.35), rgba(20, 10, 5, 0.75));
+  --env-filter: saturate(0.6) brightness(0.65) sepia(0.4);
+  --env-light: rgba(255, 210, 160, 0.2);
+  --env-mist: rgba(200, 180, 160, 0.3);
+  --env-frost: rgba(200, 180, 160, 0.35);
+}
+
+/* 5. The Deep Freeze: dark, purple, flickering light */
+.battle-background[data-theme="deep"] {
+  --env-tint: linear-gradient(180deg, rgba(90, 40, 160, 0.4), rgba(5, 0, 25, 0.8));
+  --env-filter: saturate(0.7) brightness(0.55) hue-rotate(25deg);
+  --env-light: rgba(170, 140, 255, 0.45);
+  --env-mist: rgba(200, 190, 255, 0.4);
+  --env-frost: rgba(220, 210, 255, 0.85);
+}
+
+.battle-background[data-theme="deep"] .env-light {
+  animation: env-flicker 4s steps(1) infinite;
+}
+
+/* ---- Keyframes ---- */
+
+@keyframes env-drift {
+  from { transform: scale(1.08) translate(0, 0); }
+  to { transform: scale(1.12) translate(-1.5%, 1%); }
+}
+
+@keyframes env-light-breathe {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+@keyframes env-flicker {
+  0%, 100% { opacity: 1; }
+  41% { opacity: 0.3; }
+  43% { opacity: 1; }
+  45% { opacity: 0.15; }
+  48% { opacity: 1; }
+  82% { opacity: 0.5; }
+  84% { opacity: 1; }
+}
+
+@keyframes env-mist-move {
+  from { transform: translateX(-6%); }
+  to { transform: translateX(6%); }
+}
+
+@keyframes env-flash {
+  0% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+@keyframes env-banner {
+  0% { opacity: 0; transform: translateY(12px) scale(0.96); }
+  15% { opacity: 1; transform: translateY(0) scale(1); }
+  75% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes env-shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-4px, 2px); }
+  50% { transform: translate(4px, -2px); }
+  75% { transform: translate(-2px, 1px); }
+}
+
+@keyframes env-shake-heavy {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-9px, 4px); }
+  30% { transform: translate(8px, -5px); }
+  45% { transform: translate(-6px, 3px); }
+  60% { transform: translate(5px, -2px); }
+  80% { transform: translate(-2px, 1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .env-backdrop,
+  .env-light,
+  .env-mist-back,
+  .env-mist-front,
+  .battle-background[data-theme="deep"] .env-light {
+    animation: none;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
+  .env-banner-name {
+    font-size: 24px;
+  }
+
   .game-container {
     padding: 20px;
     margin: 10px;
@@ -1287,7 +1833,18 @@ h3 {
   }
 
   .move-buttons {
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  #training-choices .move-btn {
+    max-width: none;
+    flex: 1 1 45%;
+  }
+
+  .mute-toggle,
+  .help-toggle {
+    font-size: 12px;
+    padding: 8px 12px;
   }
 
   .slot-reels {
@@ -1314,16 +1871,10 @@ h3 {
     padding: 8px;
   }
 
-  /* Mobile tooltip positioning */
+  /* Small screens: the button's own cost/damage line is enough;
+     the full tooltip would overflow the 4-column grid */
   .move-tooltip {
-    position: static;
-    transform: none;
-    opacity: 1;
-    visibility: visible;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.8);
-    padding: 5px 0;
-    margin-bottom: 5px;
+    display: none;
   }
 
   /* Mobile stats grid */

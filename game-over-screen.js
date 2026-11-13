@@ -89,29 +89,38 @@ class GameOverScreen {
       this.game.playMusic("gameOver");
       this.game.playSound("gameOverSound");
 
-      // Ensure game over screen is properly styled as full screen
+      // Stop accepting moves while the final blow plays out
+      this.game.gameState.isPlayerTurn = false;
+      document
+        .querySelectorAll("#move-buttons .move-btn")
+        .forEach((btn) => (btn.disabled = true));
+
       const gameOverScreen = document.getElementById("game-over-screen");
-      if (gameOverScreen) {
-        // Make sure it's full screen and visible
-        gameOverScreen.style.position = "fixed";
-        gameOverScreen.style.top = "0";
-        gameOverScreen.style.left = "0";
-        gameOverScreen.style.width = "100vw";
-        gameOverScreen.style.height = "100vh";
-        gameOverScreen.style.zIndex = "9999";
-        gameOverScreen.style.background = "rgba(0, 0, 0, 0.95)";
-        gameOverScreen.style.display = "flex";
-        gameOverScreen.style.flexDirection = "column";
-        gameOverScreen.style.justifyContent = "center";
-        gameOverScreen.style.alignItems = "center";
-        gameOverScreen.style.padding = "20px";
 
-        // Make it focusable for keyboard events
-        gameOverScreen.setAttribute("tabindex", "0");
-      }
-
-      // Show the game over screen after a brief delay
+      // Show the game over screen after a brief delay so the killing blow is visible
       setTimeout(() => {
+        if (gameOverScreen) {
+          // Make sure it's full screen and visible
+          Object.assign(gameOverScreen.style, {
+            position: "fixed",
+            top: "0",
+            left: "0",
+            width: "100vw",
+            height: "100vh",
+            zIndex: "9999",
+            background: "rgba(0, 0, 0, 0.95)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px",
+          });
+
+          // Make it focusable for keyboard events
+          gameOverScreen.setAttribute("tabindex", "0");
+        }
+
+        this.showGameOverStats();
         this.game.showScreen("game-over-screen");
 
         // Focus the game over screen for keyboard events

@@ -8,9 +8,77 @@
   </head>
   <body>
     <!-- Achievement Toggle Button -->
-    <button class="achievement-toggle" onclick="toggleAchievements()">
+    <button
+      class="achievement-toggle"
+      id="achievement-toggle"
+      onclick="toggleAchievements()"
+      aria-expanded="false"
+      aria-controls="achievement-drawer"
+    >
       🏆 Achievements
     </button>
+
+    <!-- Sound toggle -->
+    <button class="mute-toggle" id="mute-toggle" aria-pressed="false">
+      🔊 Sound
+    </button>
+
+    <!-- Help button (battle screen) -->
+    <button class="help-toggle" id="help-toggle" aria-label="How to play">
+      ❓ How to play
+    </button>
+
+    <!-- How to Play -->
+    <div
+      class="howto-overlay"
+      id="howto-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="howto-title"
+    >
+      <div class="howto-panel">
+        <h2 id="howto-title">How to Fight the Freezer Gang</h2>
+        <div class="howto-grid">
+          <div class="howto-card">
+            <div class="howto-icon">⚔️</div>
+            <h3>Take turns</h3>
+            <p>
+              Pick one move per turn, then the enemy acts. Their next move is
+              shown under their name, so plan ahead!
+            </p>
+          </div>
+          <div class="howto-card">
+            <div class="howto-icon">🧠</div>
+            <h3>Watch your sanity</h3>
+            <p>
+              Every move costs sanity, and you regain 1 per turn. Hit 0 and you
+              melt down and lose your turn. Use <b>Pep Talk</b> to recover.
+            </p>
+          </div>
+          <div class="howto-card">
+            <div class="howto-icon">🛡️</div>
+            <h3>Defend, heal, boost</h3>
+            <p>
+              Defend blocks the next hit completely. Heal restores 30% HP. Boost
+              adds +50% damage to your next 3 attacks.
+            </p>
+          </div>
+          <div class="howto-card">
+            <div class="howto-icon">🍦</div>
+            <h3>5 battles</h3>
+            <p>
+              HP carries over, but you heal 40% between fights. Train after each
+              win to grow stronger. Sometimes an attack gets <b>jammed</b> for
+              a turn.
+            </p>
+          </div>
+        </div>
+        <label class="howto-skip">
+          <input type="checkbox" id="howto-dont-show" /> Don't show this again
+        </label>
+        <button class="continue-btn" id="howto-close">Got it, let's fight!</button>
+      </div>
+    </div>
 
     <!-- Achievement Drawer -->
     <div class="achievement-drawer" id="achievement-drawer">
@@ -46,7 +114,7 @@
               <div class="stat-row">Attack: 15</div>
               <div class="stat-row">Defense: 10</div>
               <div class="stat-row">Sanity: 12</div>
-              <div class="stat-row">Moves: Heal + Boost</div>
+              <div class="stat-row">Moves: Heal + Defend + Boost</div>
             </div>
           </div>
           <div class="fighter-option" data-fighter="chocolate">
@@ -89,6 +157,9 @@
         <div class="fighter-select">
           <p>Also save Frank and Tim I guess?</p>
         </div>
+        <button class="continue-btn" id="confirm-fighter" disabled>
+          Pick a fighter
+        </button>
       </div>
 
       <!-- Battle Screen -->
@@ -129,6 +200,7 @@
 
           <div class="fighter-card">
             <h3 id="enemy-name">Enemy</h3>
+            <div class="enemy-intent" id="enemy-intent" aria-live="polite"></div>
             <div class="fighter-sprite" id="enemy-sprite">
               <img
                 src="images/enemy_1.png"
@@ -169,7 +241,7 @@
             <div class="attack-text">
               <span class="move-name" id="light-move-name">Scoop Slam</span>
               <div class="move-cost" id="light-damage-display">
-                Cost: 2 | DMG: 15
+                Cost: 2 | DMG: 25
               </div>
             </div>
             <div class="move-tooltip" id="tooltip-light"></div>
@@ -183,7 +255,7 @@
             <div class="attack-text">
               <span class="move-name" id="heavy-move-name">Sprinkle Blast</span>
               <div class="move-cost" id="heavy-damage-display">
-                Cost: 5 | DMG: 35
+                Cost: 4 | DMG: 50
               </div>
             </div>
             <div class="move-tooltip" id="tooltip-heavy"></div>
@@ -198,7 +270,7 @@
             <img src="images/defend_icon.png" alt="Defend" class="move-icon" />
             <div class="attack-text">
               <span class="move-name" id="defend-move-name">Ice Shield</span>
-              <div class="move-cost">Cost: 1 | Block damage</div>
+              <div class="move-cost">Cost: 1 | Block next hit</div>
             </div>
             <div class="move-tooltip" id="tooltip-defend"></div>
           </button>
@@ -220,9 +292,22 @@
             <img src="images/boost_icon.png" alt="Boost" class="move-icon" />
             <div class="attack-text">
               <span class="move-name" id="boost-move-name">Sugar Rush</span>
-              <div class="move-cost">Cost: 3 | +100% damage</div>
+              <div class="move-cost">Cost: 3 | +50% dmg, 3 attacks</div>
             </div>
             <div class="move-tooltip" id="tooltip-boost"></div>
+          </button>
+          <button class="move-btn" id="btn-talk">
+            <img src="images/talk_icon.png" alt="Pep Talk" class="move-icon" />
+            <div class="attack-text">
+              <span class="move-name">Pep Talk</span>
+              <div class="move-cost">Free | Restore sanity</div>
+            </div>
+            <div class="move-tooltip">
+              <div><strong>Pep Talk</strong></div>
+              <div>Spend your turn cheering your fighter on.</div>
+              <div>Pick the right words to restore 2-4 sanity.</div>
+              <div>Available when sanity isn't nearly full.</div>
+            </div>
           </button>
         </div>
 
@@ -238,8 +323,8 @@
       <div class="screen" id="training-screen">
         <h2>Training Time!</h2>
         <p id="training-instructions">
-          Click the floating bubbles for points! Different sizes = different
-          points! Don't click the background!
+          Click the treats before they melt! Higher treats = more points. Let
+          one melt and your combo resets!
         </p>
 
         <!-- Player Stats Display -->
@@ -288,12 +373,7 @@
           <span id="training-timer">20</span>s
         </div>
 
-        <div
-          class="training-target"
-          id="training-target"
-          role="button"
-          tabindex="0"
-        ></div>
+        <div class="training-target" id="training-target"></div>
 
         <div id="training-choices">
           <h3>Choose your training reward:</h3>
@@ -329,7 +409,7 @@
                 alt="Health Upgrade"
                 class="upgrade-icon"
               />
-              <div class="btn-text">+25 Max HP (Score 200+)</div>
+              <div class="btn-text">+40 Max HP</div>
             </button>
           </div>
         </div>
@@ -409,7 +489,7 @@
                     class="paytable-symbol"
                   />
                 </div>
-                <span class="reward">+3 Attack</span>
+                <span class="reward">+5 Attack</span>
               </div>
               <div class="paytable-row">
                 <div class="paytable-symbols">
@@ -429,7 +509,7 @@
                     class="paytable-symbol"
                   />
                 </div>
-                <span class="reward">+3 Defense</span>
+                <span class="reward">+5 Defense</span>
               </div>
               <div class="paytable-row">
                 <div class="paytable-symbols">
@@ -449,7 +529,7 @@
                     class="paytable-symbol"
                   />
                 </div>
-                <span class="reward">+25 HP</span>
+                <span class="reward">+40 Max HP</span>
               </div>
               <div class="paytable-row">
                 <div class="paytable-symbols">
@@ -469,7 +549,7 @@
                     class="paytable-symbol"
                   />
                 </div>
-                <span class="reward">+3 Max Sanity</span>
+                <span class="reward">+5 Max Sanity</span>
               </div>
               <div class="paytable-row">
                 <div class="paytable-symbols">
@@ -489,7 +569,7 @@
                     class="paytable-symbol"
                   />
                 </div>
-                <span class="reward">+2 All Stats & +20 HP</span>
+                <span class="reward">+3 All Stats & +30 Max HP</span>
               </div>
               <div class="paytable-row jackpot">
                 <div class="paytable-symbols">
@@ -509,7 +589,7 @@
                     class="paytable-symbol"
                   />
                 </div>
-                <span class="reward">+50 Training Points</span>
+                <span class="reward">+100 Training Points</span>
               </div>
             </div>
           </div>
@@ -584,6 +664,7 @@
     <script src="training.js"></script>
     <script src="victory-screen.js"></script>
     <script src="game-over-screen.js"></script>
+    <script src="environment.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

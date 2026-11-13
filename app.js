@@ -30,6 +30,12 @@ class IceCreamFighter {
 
     this.audioEnabled = false;
     this.currentMusic = null;
+    this.muted = false;
+    try {
+      this.muted = localStorage.getItem("iceCreamFighterMuted") === "1";
+    } catch (e) {
+      /* storage unavailable */
+    }
     this.audioInitialized = false;
 
     // Achievement system
@@ -41,6 +47,7 @@ class IceCreamFighter {
     this.combat = new Combat(this);
     this.victoryScreen = new VictoryScreen(this);
     this.gameOverScreen = new GameOverScreen(this);
+    this.environment = new Environment(this);
 
     this.init();
   }
@@ -83,6 +90,92 @@ class IceCreamFighter {
     this.combat.setupEventListeners();
     this.victoryScreen.setupEventListeners();
     this.gameOverScreen.setupEventListeners();
+
+    // Sound toggle
+    const muteBtn = document.getElementById("mute-toggle");
+    if (muteBtn) {
+      this.applyMuteUI();
+      muteBtn.addEventListener("click", () => {
+        this.muted = !this.muted;
+        try {
+          localStorage.setItem("iceCreamFighterMuted", this.muted ? "1" : "0");
+        } catch (e) {
+          /* storage unavailable: setting just won't persist */
+        }
+        if (this.muted && this.currentMusic) {
+          this.currentMusic.pause();
+        } else if (!this.muted) {
+          this.initializeAudio();
+          if (this.currentMusic) this.currentMusic.play().catch(() => {});
+        }
+        this.applyMuteUI();
+      });
+    }
+
+    // How to play
+    const helpBtn = document.getElementById("help-toggle");
+    if (helpBtn) {
+      helpBtn.addEventListener("click", () => this.showHowToPlay(true));
+    }
+    const howtoClose = document.getElementById("howto-close");
+    if (howtoClose) {
+      howtoClose.addEventListener("click", () => this.hideHowToPlay());
+    }
+
+    // Escape closes overlays
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      const howto = document.getElementById("howto-overlay");
+      if (howto && howto.classList.contains("open")) this.hideHowToPlay();
+      const drawer = document.getElementById("achievement-drawer");
+      if (drawer && drawer.classList.contains("open")) {
+        window.toggleAchievements();
+      }
+    });
+  }
+
+  applyMuteUI() {
+    const muteBtn = document.getElementById("mute-toggle");
+    if (!muteBtn) return;
+    muteBtn.textContent = this.muted ? "🔇 Muted" : "🔊 Sound";
+    muteBtn.setAttribute("aria-pressed", this.muted ? "true" : "false");
+  }
+
+  /**
+   * Show the rules. force=false respects "don't show again".
+   */
+  showHowToPlay(force) {
+    let skip = false;
+    try {
+      skip = localStorage.getItem("iceCreamFighterSkipHowTo") === "1";
+    } catch (e) {
+      /* ignore */
+    }
+    if (!force && skip) return;
+
+    const overlay = document.getElementById("howto-overlay");
+    const dontShow = document.getElementById("howto-dont-show");
+    if (dontShow) dontShow.checked = skip;
+    if (overlay) {
+      overlay.classList.add("open");
+      const closeBtn = document.getElementById("howto-close");
+      if (closeBtn) closeBtn.focus();
+    }
+  }
+
+  hideHowToPlay() {
+    const overlay = document.getElementById("howto-overlay");
+    const dontShow = document.getElementById("howto-dont-show");
+    try {
+      localStorage.setItem(
+        "iceCreamFighterSkipHowTo",
+        dontShow && dontShow.checked ? "1" : "0"
+      );
+    } catch (e) {
+      /* ignore */
+    }
+    if (overlay) overlay.classList.remove("open");
+    this.playSound("buttonClick");
   }
 
   /**
@@ -95,7 +188,9 @@ class IceCreamFighter {
     window.toggleAchievements = () => {
       const drawer = document.getElementById("achievement-drawer");
       if (drawer) {
-        drawer.classList.toggle("open");
+        const open = drawer.classList.toggle("open");
+        const toggle = document.getElementById("achievement-toggle");
+        if (toggle) toggle.setAttribute("aria-expanded", open ? "true" : "false");
       }
     };
   }
@@ -115,11 +210,18 @@ class IceCreamFighter {
         achievement.unlocked ? "unlocked" : "locked"
       }`;
 
+      // Description is always visible (hover-only tooltips don't work on touch)
       item.innerHTML = `
         <div class="achievement-icon">${achievement.icon}</div>
         <div class="achievement-name">${achievement.name}</div>
-        <div class="achievement-tooltip">${achievement.description}</div>
+        <div class="achievement-desc">${achievement.description}</div>
       `;
+      item.setAttribute(
+        "aria-label",
+        `${achievement.name}: ${achievement.description} (${
+          achievement.unlocked ? "unlocked" : "locked"
+        })`
+      );
 
       grid.appendChild(item);
     });
@@ -299,6 +401,7 @@ class IceCreamFighter {
       this.currentMusic = new Audio(AUDIO_CONFIG.music[musicType]);
       this.currentMusic.loop = true;
       this.currentMusic.volume = 0.3;
+      if (this.muted) return; // keep the track ready so unmuting resumes it
       this.currentMusic.play().catch((error) => {
         console.warn(`Could not play music: ${musicType}`, error);
       });
@@ -317,6 +420,7 @@ class IceCreamFighter {
       }
       return;
     }
+    if (this.muted) return;
     CONFIG_UTILS.playAudio(AUDIO_CONFIG.sounds[soundType], volume);
   }
 
@@ -333,6 +437,7 @@ class IceCreamFighter {
       if (targetScreen) {
         targetScreen.classList.add("active");
         this.gameState.currentScreen = screenId;
+        document.body.dataset.screen = screenId; // used by CSS (e.g. help button)
         this.playSound("screenTransition");
       } else {
         throw new Error(`Screen not found: ${screenId}`);
@@ -404,14 +509,6 @@ class IceCreamFighter {
       if (healBtn) healBtn.style.display = "flex";
     } else {
       if (healBtn) healBtn.style.display = "none";
-    }
-
-    // Update move button damage display to include heal if present
-    if (fighter.moves.heal) {
-      const healDisplay = document.getElementById("heal-damage-display");
-      if (healDisplay) {
-        healDisplay.textContent = "Cost: 3 | Restore 30% HP";
-      }
     }
 
     // DO NOT UPDATE ICONS - Keep the existing image icons in the HTML
@@ -596,11 +693,4 @@ document.addEventListener("DOMContentLoaded", () => {
     game.renderAchievements();
     console.log("Achievements reset");
   };
-
-  setInterval(() => {
-    const statusEl = document.getElementById("audio-status");
-    if (statusEl) {
-      statusEl.textContent = game.audioEnabled ? "Enabled" : "Disabled";
-    }
-  }, 1000);
 });

@@ -8,18 +8,61 @@ class FighterSelection {
    * Set up event listeners for fighter selection
    */
   setupEventListeners() {
+    this.pendingFighter = null;
+    const confirmBtn = document.getElementById("confirm-fighter");
+
     document.querySelectorAll(".fighter-option").forEach((option) => {
-      option.addEventListener("click", (e) => {
+      // Make cards keyboard-accessible
+      option.setAttribute("tabindex", "0");
+      option.setAttribute("role", "button");
+      option.setAttribute("aria-pressed", "false");
+
+      const choose = () => {
         this.game.initializeAudio();
-        const fighterType = e.currentTarget.dataset.fighter;
         this.game.playSound("fighterSelect");
-        this.selectFighter(fighterType);
+        this.highlightFighter(option.dataset.fighter);
+      };
+
+      option.addEventListener("click", choose);
+      option.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          choose();
+        }
       });
 
       option.addEventListener("mouseenter", () => {
-        this.game.playSound("buttonHover");
+        this.game.playSound("buttonHover", 0.25);
       });
     });
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", () => {
+        if (!this.pendingFighter) return;
+        this.game.playSound("buttonClick");
+        this.selectFighter(this.pendingFighter);
+      });
+    }
+  }
+
+  /**
+   * Highlight a fighter card and arm the confirm button
+   */
+  highlightFighter(fighterType) {
+    if (!CONFIG_UTILS.isValidFighterType(fighterType)) return;
+    this.pendingFighter = fighterType;
+
+    document.querySelectorAll(".fighter-option").forEach((option) => {
+      const selected = option.dataset.fighter === fighterType;
+      option.classList.toggle("selected", selected);
+      option.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+
+    const confirmBtn = document.getElementById("confirm-fighter");
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = `Fight as ${FIGHTER_TEMPLATES[fighterType].name}! 🍦`;
+    }
   }
 
   /**
@@ -53,6 +96,9 @@ class FighterSelection {
       this.game.updateMoveButtonDamage();
 
       this.game.combat.startBattle();
+
+      // First-time players get the rules before their first move
+      this.game.showHowToPlay(false);
     } catch (error) {
       console.error("Failed to select fighter:", error);
       this.game.showError("Failed to select fighter");

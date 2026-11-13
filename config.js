@@ -10,7 +10,10 @@ const GAME_CONFIG = {
   TRAINING_BUBBLE_LIFETIME: 4000, // Increased bubble lifetime
   SLOT_SPIN_DURATION: 100,
   SLOT_SPIN_COUNT_BASE: 10,
-  BOOST_MULTIPLIER: 2.0, // UPDATED: 100% boost (was 1.5)
+  BOOST_MULTIPLIER: 1.5, // +50% damage; 2.0 let enemies one-shot fighters
+  HP_RECOVERY_BETWEEN_BATTLES: 0.4, // Heal 40% of max HP before each new battle
+  JAM_CHANCE: 0.25, // Chance per turn (after turn 1) that one attack is jammed
+  TALKDOWN_FAIL_HP_PENALTY: 0.1, // Wrong talk-down answer costs 10% of max HP
   SANITY_RECOVERY_PER_TURN: 1,
   SANITY_RECOVERY_BETWEEN_BATTLES: 3, // Increased recovery
   MALFUNCTION_SANITY_RECOVERY: 0.5,
@@ -43,8 +46,13 @@ const FIGHTER_TEMPLATES = {
         icon: "✨",
         description: "Stab with just the tip",
       },
+      defend: {
+        // Vanilla is "The Versatile": the only fighter with both Heal and Defend
+        name: "Cone Guard",
+        icon: "🛡️",
+        description: "Hide behind the cone",
+      },
       heal: {
-        // UPDATED: Vanilla now has heal instead of defend
         name: "Face Cream",
         icon: "💖",
         description: "Restore vanilla smoothness",
@@ -139,7 +147,7 @@ const ENEMY_TEMPLATES = [
     name: "Freezer Burn Fred",
     sprite: "❄️",
     image: "images/enemy_2.png",
-    hp: 160, // Increased
+    hp: 180,
     maxHp: 180,
     attack: 20, // Increased
     defense: 25, // Increased
@@ -215,7 +223,7 @@ const MOVE_DEFINITIONS = {
     name: "Shield",
     damage: 0,
     baseCost: 1,
-    description: "FREE if they attack, costly if not",
+    description: "Blocks all damage from the enemy's next attack",
     sanityCosts: {
       vsLight: 0,
       vsHeavy: 0,
@@ -227,7 +235,7 @@ const MOVE_DEFINITIONS = {
     name: "Power Up",
     damage: 0,
     baseCost: 3,
-    description: "+100% damage next 3 turns", // UPDATED description
+    description: "+50% damage on your next 3 attacks", // keep in sync with GAME_CONFIG.BOOST_MULTIPLIER
     sanityCosts: {
       vsLight: 3,
       vsHeavy: 5,
@@ -320,9 +328,9 @@ const SLOT_CONFIG = {
     { emoji: "🧊", name: "ice", image: "images/slot_ice.png" },
     { emoji: "🪙", name: "coin", image: "images/slot_coin.png" },
   ],
-  // Simple results array - 80% win rate (equal chances for each symbol), 20% loss rate
+  // Results table: 13 wins / 12 losses = 52% win rate, so the "risky" slots
+  // are actually risky instead of strictly better than training.
   results: [
-    // Wins (80% total, ~13.33% each)
     { type: "win", symbol: "vanilla" },
     { type: "win", symbol: "vanilla" },
     { type: "win", symbol: "vanilla" },
@@ -335,18 +343,8 @@ const SLOT_CONFIG = {
     { type: "win", symbol: "soft" },
     { type: "win", symbol: "soft" },
     { type: "win", symbol: "ice" },
-    { type: "win", symbol: "ice" },
     { type: "win", symbol: "coin" },
-    { type: "win", symbol: "coin" },
-    { type: "win", symbol: "coin" },
-    { type: "win", symbol: "coin" },
-    { type: "win", symbol: "coin" },
-    // Losses (20% total)
-    { type: "loss" },
-    { type: "loss" },
-    { type: "loss" },
-    { type: "loss" },
-    { type: "loss" },
+    ...Array.from({ length: 12 }, () => ({ type: "loss" })),
   ],
   rewards: {
     triple: {
@@ -533,13 +531,13 @@ const ACHIEVEMENTS = {
   sanity_100: {
     icon: "🧠",
     name: "Zen Master",
-    description: "Train Sanity above 100",
+    description: "Train Max Sanity above 30",
     unlocked: false,
   },
   hp_300: {
     icon: "❤️",
     name: "Tank Mode",
-    description: "Train HP above 300",
+    description: "Train Max HP above 250",
     unlocked: false,
   },
 
@@ -652,8 +650,9 @@ const AUDIO_CONFIG = {
     talkFail: "audio/talk_fail.mp3",
 
     // Malfunction
-    malfunction: "audio/malfunction.mp3",
-    malfunctionRecover: "audio/malfunction_recover.mp3",
+    // (no dedicated malfunction files exist; reuse the talk sounds)
+    malfunction: "audio/talk_fail.mp3",
+    malfunctionRecover: "audio/talk_success.mp3",
 
     // Training
     trainingStart: "audio/training_start.mp3",
@@ -674,7 +673,7 @@ const AUDIO_CONFIG = {
     victorySound: "audio/victory_sound.mp3",
 
     // Achievement sound
-    achievementUnlock: "audio/achievement_unlock.mp3",
+    achievementUnlock: "audio/achievement_unlocked.mp3",
   },
 };
 
@@ -831,8 +830,16 @@ const CONFIG_UTILS = {
       const saved = localStorage.getItem("iceCreamFighterAchievements");
       if (saved) {
         const loadedAchievements = JSON.parse(saved);
-        // Merge with default achievements to add any new ones
-        return { ...ACHIEVEMENTS, ...loadedAchievements };
+        // Use current definitions (names/descriptions may change) and only
+        // carry over the saved unlocked flag
+        const merged = {};
+        Object.entries(ACHIEVEMENTS).forEach(([key, def]) => {
+          merged[key] = {
+            ...def,
+            unlocked: Boolean(loadedAchievements[key]?.unlocked),
+          };
+        });
+        return merged;
       }
     } catch (error) {
       console.warn("Could not load achievements:", error);
